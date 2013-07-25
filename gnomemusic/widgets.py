@@ -507,8 +507,8 @@ class ArtistAlbumWidget(Gtk.HBox):
                 ui.get_object("title").set_alignment(0.0, 0.5)
                 self.ui.get_object("grid1").attach(
                     song_widget,
-                    int(i / (len(self.tracks) / 2)),
-                    int(i % (len(self.tracks) / 2)), 1, 1
+                    int(i % 2),
+                    int(i / 2), 1, 1
                 )
                 track.song_widget = song_widget
                 itr = self.model.append()
