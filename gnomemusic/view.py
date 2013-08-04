@@ -546,7 +546,6 @@ class Playlist(ViewContainer):
 
     def _on_add_button_clicked(self, button):
         text_renderer = Gtk.CellRendererText()
-        _iter = self._model.append()
         text_renderer.set_property('editable', True)
         text_renderer.set_property('editable-set', True)
         self.view.get_generic_view().add_renderer(text_renderer,

@@ -239,6 +239,8 @@ class AlbumWidget(Gtk.EventBox):
                           self._on_view_selection_changed)
         self.filter = self.model.filter_new(None)
         self.view.set_model(self.filter)
+        selection_toolbar._add_to_playlist_button.connect(
+            'clicked', self._on_add_to_playlist_button_clicked)
         escaped_artist = GLib.markup_escape_text(artist)
         escaped_album = GLib.markup_escape_text(album)
         self.ui.get_object('artist_label').set_markup(escaped_artist)
@@ -249,6 +251,10 @@ class AlbumWidget(Gtk.EventBox):
         else:
             self.ui.get_object('released_label_info').set_text('----')
         self.player.connect('playlist-item-changed', self.update_model)
+
+    def _on_add_to_playlist_button_clicked(self, widget):
+        self.dialog = PlaylistDialog()
+        self.dialog.run()
 
     def _on_view_selection_changed(self, widget):
         items = self.view.get_selection()
@@ -435,6 +441,33 @@ class ArtistAlbums(Gtk.VBox):
             song_widget.title.set_markup('<span>%s</span>' % escapedTitle)
             itr = self.model.iter_next(itr)
         return False
+
+
+class PlaylistDialog(Gtk.Dialog):
+    def __init__(self):
+        Gtk.Dialog.__init__(self, "My Dialog", None, 0)
+
+        self.set_default_size(150, 100)
+        self._cancel_button = Gtk.Button(label=_("Cancel"))
+        self._select_button = Gtk.Button(label=_("Select"))
+        self._select_button.get_style_context().add_class("suggested-action")
+        label = Gtk.Label("This is a dialog to display additional information")
+        self.title_bar = Gtk.HeaderBar()
+        self.title_bar.set_title(_("Select Playlist"))
+        self.title_bar.pack_start(self._cancel_button)
+        self.title_bar.pack_end(self._select_button)
+        self.set_titlebar(self.title_bar)
+        box = self.get_content_area()
+        box.add(label)
+        self._cancel_button.connect('clicked', self._on_cancel_button_clicked)
+        self._select_button.connect('clicked', self._on_selection)
+        self.show_all()
+
+    def _on_selection(self, select_button):
+        pass
+
+    def _on_cancel_button_clicked(self, cancel_button):
+        self.destroy()
 
 
 class AllArtistsAlbums(ArtistAlbums):
