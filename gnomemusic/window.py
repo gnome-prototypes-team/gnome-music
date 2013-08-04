@@ -146,7 +146,7 @@ class Window(Gtk.ApplicationWindow):
             self.views.append(Views.Albums(self.toolbar, self.selection_toolbar, self.player))
             self.views.append(Views.Artists(self.toolbar, self.selection_toolbar, self.player))
             self.views.append(Views.Songs(self.toolbar, self.selection_toolbar, self.player))
-            #self.views.append(Views.Playlist(self.toolbar, self.selection_toolbar, self.player))
+            self.views.append(Views.Playlist(self.toolbar, self.selection_toolbar, self.player))
 
             for i in self.views:
                 self._stack.add_titled(i, i.title, i.title)
