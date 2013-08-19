@@ -50,7 +50,10 @@ class Grilo(GObject.GObject):
 
     def __init__(self):
         GObject.GObject.__init__(self)
-
+        self.playlist_path = GLib.build_filenamev([GLib.get_user_data_dir(),
+                                                  "gnome-music", "playlists"])
+        if not (GLib.file_test(self.playlist_path, GLib.FileTest.IS_DIR)):
+            GLib.mkdir_with_parents(self.playlist_path, int("0755", 8))
         self.options = Grl.OperationOptions()
         self.options.set_flags(Grl.ResolutionFlags.FULL |
                                Grl.ResolutionFlags.IDLE_RELAY)

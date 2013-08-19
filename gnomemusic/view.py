@@ -488,13 +488,6 @@ class Playlist(ViewContainer):
     def __init__(self, header_bar, selection_toolbar, player):
         ViewContainer.__init__(self, _("Playlists"), header_bar,
                                selection_toolbar)
-        self._playlistWidget = Gtk.Frame(
-            shadow_type=Gtk.ShadowType.NONE,
-            hexpand=True
-        )
-        self.add_button = Gtk.Button(label=_("Add"), visible=True)
-        self.view.get_parent().add(self.add_button)
-        self.add_button.show()
         self._playlist_list = {}
         self.view.set_view_type(Gd.MainViewType.LIST)
         self.view.set_hexpand(False)
@@ -502,7 +495,6 @@ class Playlist(ViewContainer):
             Gtk.SelectionMode.SINGLE)
         self._grid.attach(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL),
                           1, 0, 1, 1)
-        self._grid.attach(self._playlistWidget, 2, 0, 2, 2)
         self._add_list_renderers()
         if (Gtk.Settings.get_default().get_property(
                 'gtk_application_prefer_dark_theme')):
@@ -511,7 +503,6 @@ class Playlist(ViewContainer):
         else:
             self.view.get_generic_view().get_style_context().\
                 add_class("artist-panel-white")
-        self.add_button.connect("clicked", self._on_add_button_clicked)
 
     def _add_list_renderers(self):
         list_widget = self.view.get_generic_view()
