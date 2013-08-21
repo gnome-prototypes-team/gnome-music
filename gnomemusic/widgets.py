@@ -450,23 +450,21 @@ class PlaylistDialog():
         self.ui = Gtk.Builder()
         self.ui.add_from_resource('/org/gnome/Music/PlaylistDialog.ui')
         self.dialog_box = self.ui.get_object('dialog1')
-        self.dialog_box.set_default_size(300, 500)
-        self._cancel_button = self.ui.get_object('cancel-button')
-        self._select_button = self.ui.get_object('select-button')
-        self.view = Gtk.TreeView()
-        self.model = Gtk.ListStore(str)
+
+        self.view = self.ui.get_object('treeview1')
+        self._add_list_renderers()
+        self.view.connect('row-activated', self._on_item_activated)
+
+        self.model = self.ui.get_object('liststore1')
         playlist_names = playlist.get_playlists()
         self.populate(playlist_names)
-        self.view.set_model(self.model)
+
         self.title_bar = self.ui.get_object('headerbar1')
         self.dialog_box.set_titlebar(self.title_bar)
-        box = self.dialog_box.get_content_area()
-        self._add_list_renderers()
-        box.add(self.view)
-        self.view.connect('row-activated', self._on_item_activated)
+        self._cancel_button = self.ui.get_object('cancel-button')
+        self._select_button = self.ui.get_object('select-button')
         self._cancel_button.connect('clicked', self._on_cancel_button_clicked)
         self._select_button.connect('clicked', self._on_selection)
-        self.dialog_box.show_all()
 
     def _add_list_renderers(self):
         cols = Gtk.TreeViewColumn()
@@ -477,8 +475,7 @@ class PlaylistDialog():
             xalign=0.0,
             width=220
         )
-        # self.view.add_renderer(type_renderer, lambda *args: None, None)
-        cols.clear_attributes(type_renderer)
+        cols.pack_start(type_renderer, True)
         cols.add_attribute(type_renderer, "text", 0)
         self.view.append_column(cols)
 
