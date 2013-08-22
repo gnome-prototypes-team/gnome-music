@@ -477,14 +477,14 @@ class PlaylistDialog():
         )
         cols.pack_start(type_renderer, True)
         cols.add_attribute(type_renderer, "text", 0)
+        cols.add_attribute(type_renderer, "editable", 1)
         self.view.append_column(cols)
 
     def populate(self, items):
         for playlist_name in items:
-            self.model.append([playlist_name])
-            # self.model.set(_iter, [0], )
+            self.model.append([playlist_name, False])
         add_playlist_iter = self.model.append()
-        self.model.set(add_playlist_iter, [0], [_("New Playlist")])
+        self.model.set(add_playlist_iter, [0, 1], [_("New Playlist"), True])
 
     def _on_selection(self, select_button):
         pass
@@ -492,8 +492,8 @@ class PlaylistDialog():
     def _on_cancel_button_clicked(self, cancel_button):
         self.dialog_box.destroy()
 
-    def _on_item_activated(self, widget, item_id, path):
-        pass
+    def _on_item_activated(self, view, path, column):
+        self.view.set_cursor(path, column, True)
 
 
 class AllArtistsAlbums(ArtistAlbums):
