@@ -132,15 +132,10 @@ class Grilo(GObject.GObject):
         if not self.filesystem.test_media_from_uri(uri):
             return
         options = self.options.copy()
-        self.filesystem.get_media_from_uri(
-            uri, self.METADATA_KEYS, options,
-            self._media_from_uri_callback, callback
+        media = self.filesystem.get_media_from_uri_sync(
+            uri, self.METADATA_KEYS, options
         )
-
-    def _media_from_uri_callback(self, source, operation_id, media, data=None, error=None):
-        callback = data
-        if callback:
-            callback(media)
+        callback(media)
 
 Grl.init(None)
 
