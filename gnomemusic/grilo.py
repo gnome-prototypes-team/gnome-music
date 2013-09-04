@@ -66,6 +66,7 @@ class Grilo(GObject.GObject):
 
         self.sources = {}
         self.tracker = None
+        self.filesystem = None
 
         self.registry.connect('source_added', self._on_source_added)
         self.registry.connect('source_removed', self._on_source_removed)
@@ -83,6 +84,9 @@ class Grilo(GObject.GObject):
 
                 if self.tracker is not None:
                     self.emit('ready')
+        elif id == 'grl-filesystem':
+            self.sources[id] = mediaSource
+            self.filesystem = mediaSource
 
     def _on_source_removed(self, pluginRegistry, mediaSource):
         print('source removed')
