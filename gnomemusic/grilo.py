@@ -58,18 +58,18 @@ class Grilo(GObject.GObject):
         self.options.set_flags(Grl.ResolutionFlags.FULL |
                                Grl.ResolutionFlags.IDLE_RELAY)
 
-        self.registry = Grl.Registry.get_default()
-        try:
-            self.registry.load_all_plugins()
-        except GLib.GError:
-            print('Failed to load plugins.')
-
         self.sources = {}
         self.tracker = None
         self.filesystem = None
 
+        self.registry = Grl.Registry.get_default()
         self.registry.connect('source_added', self._on_source_added)
         self.registry.connect('source_removed', self._on_source_removed)
+
+        try:
+            self.registry.load_all_plugins()
+        except GLib.GError:
+            print('Failed to load plugins.')
 
     def _on_source_added(self, pluginRegistry, mediaSource):
         id = mediaSource.get_id()
