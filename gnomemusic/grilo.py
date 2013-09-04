@@ -128,6 +128,20 @@ class Grilo(GObject.GObject):
         query = Query.get_album_for_id(album_id)
         self.tracker.query(query, self.METADATA_THUMBNAIL_KEYS, options, _callback, None)
 
+    def get_media_from_uri(self, uri, callback):
+        if not self.filesystem.test_media_from_uri(uri):
+            return
+        options = self.options.copy()
+        self.filesystem.get_media_from_uri(
+            uri, self.METADATA_KEYS, options,
+            self._media_from_uri_callback, callback
+        )
+
+    def _media_from_uri_callback(self, source, operation_id, media, data=None, error=None):
+        callback = data
+        if callback:
+            callback(media)
+
 Grl.init(None)
 
 grilo = Grilo()
