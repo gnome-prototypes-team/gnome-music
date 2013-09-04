@@ -648,6 +648,7 @@ class Playlist(ViewContainer):
         self.playlists_sidebar.get_style_context().add_class('artist-panel')
         self.playlists_sidebar.get_generic_view().get_selection().set_mode(
             Gtk.SelectionMode.SINGLE)
+        self.playlists_sidebar.connect('item-activated', self._on_playlist_activated)
         self._grid.insert_column(0)
         self._grid.attach(self.playlists_sidebar, 0, 0, 1, 1)
         self._grid.attach(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL),
@@ -661,6 +662,7 @@ class Playlist(ViewContainer):
             self.playlists_sidebar.get_generic_view().get_style_context().\
                 add_class("artist-panel-white")
 
+        self.player = player
         self.show_all()
 
     def _add_list_renderers(self):
@@ -771,6 +773,42 @@ class Playlist(ViewContainer):
         _iter = self.playlists_model.append()
         self._playlist_list[item] = {"iter": _iter, "albums": []}
         self.playlists_model.set(_iter, [2], [item])
+
+    def _on_playlist_activated(self, widget, item_id, path):
+        self._model = Gtk.ListStore(
+            GObject.TYPE_STRING,
+            GObject.TYPE_STRING,
+            GObject.TYPE_STRING,
+            GObject.TYPE_STRING,
+            GdkPixbuf.Pixbuf,
+            GObject.TYPE_OBJECT,
+            GObject.TYPE_BOOLEAN,
+            GObject.TYPE_INT,
+            GObject.TYPE_STRING,
+            GObject.TYPE_BOOLEAN,
+            GObject.TYPE_BOOLEAN
+        )
+        self.view.set_model(self._model)
+        _iter = self.playlists_model.get_iter(path)
+        playlist = self.playlists_model.get_value(_iter, 2)
+        playlists.parse_playlist(self.playlists_model.get_value(_iter, 2), self._add_song)
+        self.current_playlist = playlist
+        playlists.parse_playlist(playlist, self._add_song)
+
+    def _add_song(self, item):
+        if not item:
+            return
+        self._offset += 1
+        item.set_title(albumArtCache.get_media_title(item))
+        artist = item.get_string(Grl.METADATA_KEY_ARTIST)\
+            or item.get_author()\
+            or _("Unknown Artist")
+        _iter = self._model.insert_with_valuesv(
+            -1,
+            [2, 3, 5, 8, 9, 10],
+            [albumArtCache.get_media_title(item),
+             artist, item, self.nowPlayingIconName, False, False])
+        self.player.discover_item(item, self._on_discovered, _iter)
 
     def populate(self):
         for item in self.playlists_list:
