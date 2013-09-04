@@ -790,6 +790,12 @@ class Playlist(ViewContainer):
         self._playlist_list[item] = {"iter": _iter, "albums": []}
         self.playlists_model.set(_iter, [2], [item])
 
+    def _on_item_activated(self, widget, id, path):
+        _iter = self._model.get_iter(path)
+        if self._model.get_value(_iter, 8) != self.errorIconName:
+            self.player.set_playlist('Playlist', self.current_playlist, self._model, _iter, 5)
+            self.player.set_playing(True)
+
     def _on_item_changed(self, monitor, file1, file2, event, _iter):
         if self._model.iter_is_valid(_iter):
             if event == Gio.FileMonitorEvent.DELETED:
