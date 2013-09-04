@@ -1,4 +1,5 @@
 from gi.repository import TotemPlParser, GLib, Gio
+from gnomemusic.grilo import grilo
 
 import os
 
@@ -50,3 +51,14 @@ class Playlists:
 
     def get_path_to_playlist(self, playlist_name):
         return os.path.join(self.playlist_dir, playlist_name + ".pls")
+
+    def parse_playlist(self, playlist_name, callback):
+        parser = TotemPlParser.Parser()
+        parser.connect('entry-parsed', self._on_entry_parsed, callback)
+        parser.parse_async(
+            GLib.filename_to_uri(self.get_path_to_playlist(playlist_name), None),
+            False, None, None, None
+        )
+
+    def _on_entry_parsed(self, parser, uri, metadata, data=None):
+        grilo.get_media_from_uri(uri, data)
