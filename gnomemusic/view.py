@@ -482,67 +482,6 @@ class Songs(ViewContainer):
             GLib.idle_add(grilo.populate_songs, self._offset, self._add_item)
 
 
-class Playlist(ViewContainer):
-    playlists_list = playlists.get_playlists()
-
-    def __init__(self, header_bar, selection_toolbar, player):
-        ViewContainer.__init__(self, _("Playlists"), header_bar,
-                               selection_toolbar)
-        self._playlist_list = {}
-        self.view.set_view_type(Gd.MainViewType.LIST)
-        self.view.set_hexpand(False)
-        self.view.get_generic_view().get_selection().set_mode(
-            Gtk.SelectionMode.SINGLE)
-        self._grid.attach(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL),
-                          1, 0, 1, 1)
-        self._add_list_renderers()
-        if (Gtk.Settings.get_default().get_property(
-                'gtk_application_prefer_dark_theme')):
-            self.view.get_generic_view().get_style_context().\
-                add_class("artist-panel-dark")
-        else:
-            self.view.get_generic_view().get_style_context().\
-                add_class("artist-panel-white")
-
-    def _add_list_renderers(self):
-        list_widget = self.view.get_generic_view()
-
-        cols = list_widget.get_columns()
-        cells = cols[0].get_cells()
-        cells[1].set_visible(False)
-        cells[2].set_visible(False)
-        type_renderer = Gd.StyledTextRenderer(
-            xpad=16,
-            ypad=16,
-            ellipsize=Pango.EllipsizeMode.END,
-            xalign=0.0,
-            width=220
-        )
-        list_widget.add_renderer(type_renderer, lambda *args: None, None)
-        cols[0].clear_attributes(type_renderer)
-        cols[0].add_attribute(type_renderer, "text", 2)
-
-    def _populate(self):
-        self._init = True
-        self.populate()
-
-    def _add_item(self, item):
-        _iter = self._model.append()
-        self._playlist_list[item] = {"iter": _iter, "albums": []}
-        self._model.set(_iter, [2], [item])
-
-    def populate(self):
-        for item in self.playlists_list:
-            self._add_item(item)
-
-    def _on_add_button_clicked(self, button):
-        text_renderer = Gtk.CellRendererText()
-        text_renderer.set_property('editable', True)
-        text_renderer.set_property('editable-set', True)
-        self.view.get_generic_view().add_renderer(text_renderer,
-                                                  lambda *args: None, None)
-
-
 class Artists (ViewContainer):
     def __init__(self, header_bar, selection_toolbar, player):
         ViewContainer.__init__(self, _("Artists"), header_bar,
@@ -671,3 +610,64 @@ class Artists (ViewContainer):
             if self._last_selection is not None:
                 self.view.get_generic_view().get_selection().select_iter(
                     self._last_selection)
+
+
+class Playlist(ViewContainer):
+    playlists_list = playlists.get_playlists()
+
+    def __init__(self, header_bar, selection_toolbar, player):
+        ViewContainer.__init__(self, _("Playlists"), header_bar,
+                               selection_toolbar)
+        self._playlist_list = {}
+        self.view.set_view_type(Gd.MainViewType.LIST)
+        self.view.set_hexpand(False)
+        self.view.get_generic_view().get_selection().set_mode(
+            Gtk.SelectionMode.SINGLE)
+        self._grid.attach(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL),
+                          1, 0, 1, 1)
+        self._add_list_renderers()
+        if (Gtk.Settings.get_default().get_property(
+                'gtk_application_prefer_dark_theme')):
+            self.view.get_generic_view().get_style_context().\
+                add_class("artist-panel-dark")
+        else:
+            self.view.get_generic_view().get_style_context().\
+                add_class("artist-panel-white")
+
+    def _add_list_renderers(self):
+        list_widget = self.view.get_generic_view()
+
+        cols = list_widget.get_columns()
+        cells = cols[0].get_cells()
+        cells[1].set_visible(False)
+        cells[2].set_visible(False)
+        type_renderer = Gd.StyledTextRenderer(
+            xpad=16,
+            ypad=16,
+            ellipsize=Pango.EllipsizeMode.END,
+            xalign=0.0,
+            width=220
+        )
+        list_widget.add_renderer(type_renderer, lambda *args: None, None)
+        cols[0].clear_attributes(type_renderer)
+        cols[0].add_attribute(type_renderer, "text", 2)
+
+    def _populate(self):
+        self._init = True
+        self.populate()
+
+    def _add_item(self, item):
+        _iter = self._model.append()
+        self._playlist_list[item] = {"iter": _iter, "albums": []}
+        self._model.set(_iter, [2], [item])
+
+    def populate(self):
+        for item in self.playlists_list:
+            self._add_item(item)
+
+    def _on_add_button_clicked(self, button):
+        text_renderer = Gtk.CellRendererText()
+        text_renderer.set_property('editable', True)
+        text_renderer.set_property('editable-set', True)
+        self.view.get_generic_view().add_renderer(text_renderer,
+                                                  lambda *args: None, None)

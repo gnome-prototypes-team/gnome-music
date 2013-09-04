@@ -445,57 +445,6 @@ class ArtistAlbums(Gtk.VBox):
         return False
 
 
-class PlaylistDialog():
-    def __init__(self):
-        self.ui = Gtk.Builder()
-        self.ui.add_from_resource('/org/gnome/Music/PlaylistDialog.ui')
-        self.dialog_box = self.ui.get_object('dialog1')
-
-        self.view = self.ui.get_object('treeview1')
-        self._add_list_renderers()
-        self.view.connect('row-activated', self._on_item_activated)
-
-        self.model = self.ui.get_object('liststore1')
-        playlist_names = playlist.get_playlists()
-        self.populate(playlist_names)
-
-        self.title_bar = self.ui.get_object('headerbar1')
-        self.dialog_box.set_titlebar(self.title_bar)
-        self._cancel_button = self.ui.get_object('cancel-button')
-        self._select_button = self.ui.get_object('select-button')
-        self._cancel_button.connect('clicked', self._on_cancel_button_clicked)
-        self._select_button.connect('clicked', self._on_selection)
-
-    def _add_list_renderers(self):
-        cols = Gtk.TreeViewColumn()
-        type_renderer = Gd.StyledTextRenderer(
-            xpad=16,
-            ypad=16,
-            ellipsize=Pango.EllipsizeMode.END,
-            xalign=0.0,
-            width=220
-        )
-        cols.pack_start(type_renderer, True)
-        cols.add_attribute(type_renderer, "text", 0)
-        cols.add_attribute(type_renderer, "editable", 1)
-        self.view.append_column(cols)
-
-    def populate(self, items):
-        for playlist_name in items:
-            self.model.append([playlist_name, False])
-        add_playlist_iter = self.model.append()
-        self.model.set(add_playlist_iter, [0, 1], [_("New Playlist"), True])
-
-    def _on_selection(self, select_button):
-        pass
-
-    def _on_cancel_button_clicked(self, cancel_button):
-        self.dialog_box.destroy()
-
-    def _on_item_activated(self, view, path, column):
-        self.view.set_cursor(path, column, True)
-
-
 class AllArtistsAlbums(ArtistAlbums):
 
     def __init__(self, player):
@@ -661,3 +610,54 @@ class ArtistAlbumWidget(Gtk.HBox):
         self.player.set_playlist('Artist', self.album,
                                  widget.model, widget._iter, 5)
         self.player.set_playing(True)
+
+
+class PlaylistDialog():
+    def __init__(self):
+        self.ui = Gtk.Builder()
+        self.ui.add_from_resource('/org/gnome/Music/PlaylistDialog.ui')
+        self.dialog_box = self.ui.get_object('dialog1')
+
+        self.view = self.ui.get_object('treeview1')
+        self._add_list_renderers()
+        self.view.connect('row-activated', self._on_item_activated)
+
+        self.model = self.ui.get_object('liststore1')
+        playlist_names = playlist.get_playlists()
+        self.populate(playlist_names)
+
+        self.title_bar = self.ui.get_object('headerbar1')
+        self.dialog_box.set_titlebar(self.title_bar)
+        self._cancel_button = self.ui.get_object('cancel-button')
+        self._select_button = self.ui.get_object('select-button')
+        self._cancel_button.connect('clicked', self._on_cancel_button_clicked)
+        self._select_button.connect('clicked', self._on_selection)
+
+    def _add_list_renderers(self):
+        cols = Gtk.TreeViewColumn()
+        type_renderer = Gd.StyledTextRenderer(
+            xpad=16,
+            ypad=16,
+            ellipsize=Pango.EllipsizeMode.END,
+            xalign=0.0,
+            width=220
+        )
+        cols.pack_start(type_renderer, True)
+        cols.add_attribute(type_renderer, "text", 0)
+        cols.add_attribute(type_renderer, "editable", 1)
+        self.view.append_column(cols)
+
+    def populate(self, items):
+        for playlist_name in items:
+            self.model.append([playlist_name, False])
+        add_playlist_iter = self.model.append()
+        self.model.set(add_playlist_iter, [0, 1], [_("New Playlist"), True])
+
+    def _on_selection(self, select_button):
+        pass
+
+    def _on_cancel_button_clicked(self, cancel_button):
+        self.dialog_box.destroy()
+
+    def _on_item_activated(self, view, path, column):
+        self.view.set_cursor(path, column, True)
