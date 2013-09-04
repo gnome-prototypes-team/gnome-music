@@ -22,7 +22,7 @@ class Playlists:
     def create_playlist(self, name, iterlist=None):
         parser = TotemPlParser.Parser()
         playlist = TotemPlParser.Playlist()
-        pl_file = Gio.file_new_for_path(self.playlist_dir + name + ".pls")
+        pl_file = Gio.file_new_for_path(self.get_path_to_playlist(name))
         if iterlist is not None:
             for _iter in iterlist:
                 pass
@@ -47,3 +47,6 @@ class Playlists:
 
     def delete_playlist(self, playlist_name):
         pass
+
+    def get_path_to_playlist(self, playlist_name):
+        return os.path.join(self.playlist_dir, playlist_name + ".pls")
