@@ -662,6 +662,7 @@ class Playlist(ViewContainer):
             self.playlists_sidebar.get_generic_view().get_style_context().\
                 add_class("artist-panel-white")
 
+        self.monitors = []
         self.player = player
         self.show_all()
 
@@ -774,6 +775,11 @@ class Playlist(ViewContainer):
         self._playlist_list[item] = {"iter": _iter, "albums": []}
         self.playlists_model.set(_iter, [2], [item])
 
+    def _on_item_changed(self, monitor, file1, file2, event, _iter):
+        if self._model.iter_is_valid(_iter):
+            if event == Gio.FileMonitorEvent.DELETED:
+                self._model.set(_iter, [8, 10], [self.errorIconName, True])
+
     def _on_playlist_activated(self, widget, item_id, path):
         self._model = Gtk.ListStore(
             GObject.TYPE_STRING,
@@ -809,6 +815,11 @@ class Playlist(ViewContainer):
             [albumArtCache.get_media_title(item),
              artist, item, self.nowPlayingIconName, False, False])
         self.player.discover_item(item, self._on_discovered, _iter)
+        g_file = Gio.file_new_for_uri(item.get_url())
+        self.monitors.append(g_file.monitor_file(Gio.FileMonitorFlags.NONE,
+                                                 None))
+        self.monitors[(self._offset - 1)].connect('changed',
+                                                  self._on_item_changed, _iter)
 
     def populate(self):
         for item in self.playlists_list:
