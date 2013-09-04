@@ -663,7 +663,10 @@ class Playlist(ViewContainer):
                 add_class("artist-panel-white")
 
         self.monitors = []
+        self.iter_to_clean = None
+        self.iter_to_clean_model = None
         self.player = player
+        self.player.connect('playlist-item-changed', self.update_model)
         self.show_all()
 
     def _add_list_renderers(self):
@@ -769,6 +772,18 @@ class Playlist(ViewContainer):
     def _populate(self):
         self._init = True
         self.populate()
+
+    def update_model(self, player, playlist, currentIter):
+        if self.iter_to_clean:
+            self.iter_to_clean_model.set_value(self.iter_to_clean, 10, False)
+        if playlist != self._model:
+            return False
+
+        self._model.set_value(currentIter, 10, True)
+        if self._model.get_value(currentIter, 8) != self.errorIconName:
+            self.iter_to_clean = currentIter.copy()
+            self.iter_to_clean_model = self._model
+        return False
 
     def _add_item(self, item):
         _iter = self.playlists_model.append()
