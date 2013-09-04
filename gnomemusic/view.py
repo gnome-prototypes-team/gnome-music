@@ -617,25 +617,114 @@ class Playlist(ViewContainer):
 
     def __init__(self, header_bar, selection_toolbar, player):
         ViewContainer.__init__(self, _("Playlists"), header_bar,
-                               selection_toolbar)
-        self._playlist_list = {}
+                               selection_toolbar, True)
+
         self.view.set_view_type(Gd.MainViewType.LIST)
-        self.view.set_hexpand(False)
-        self.view.get_generic_view().get_selection().set_mode(
+        self.view.get_generic_view().get_style_context()\
+            .add_class('songs-list')
+        self._add_list_renderers()
+
+        self._playlist_list = {}
+        self.playlists_model = Gtk.ListStore(
+            GObject.TYPE_STRING,
+            GObject.TYPE_STRING,
+            GObject.TYPE_STRING,
+            GObject.TYPE_STRING,
+            GdkPixbuf.Pixbuf,
+            GObject.TYPE_OBJECT,
+            GObject.TYPE_BOOLEAN,
+            GObject.TYPE_INT,
+            GObject.TYPE_STRING,
+            GObject.TYPE_BOOLEAN,
+            GObject.TYPE_BOOLEAN
+        )
+
+        self.playlists_sidebar = Gd.MainView(
+            shadow_type=Gtk.ShadowType.NONE
+        )
+        self.playlists_sidebar.set_model(self.playlists_model)
+        self.playlists_sidebar.set_view_type(Gd.MainViewType.LIST)
+        self.playlists_sidebar.set_hexpand(False)
+        self.playlists_sidebar.get_style_context().add_class('artist-panel')
+        self.playlists_sidebar.get_generic_view().get_selection().set_mode(
             Gtk.SelectionMode.SINGLE)
+        self._grid.insert_column(0)
+        self._grid.attach(self.playlists_sidebar, 0, 0, 1, 1)
         self._grid.attach(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL),
                           1, 0, 1, 1)
-        self._add_list_renderers()
+        self._add_sidebar_renderers()
         if (Gtk.Settings.get_default().get_property(
                 'gtk_application_prefer_dark_theme')):
-            self.view.get_generic_view().get_style_context().\
+            self.playlists_sidebar.get_generic_view().get_style_context().\
                 add_class("artist-panel-dark")
         else:
-            self.view.get_generic_view().get_style_context().\
+            self.playlists_sidebar.get_generic_view().get_style_context().\
                 add_class("artist-panel-white")
+
+        self.show_all()
 
     def _add_list_renderers(self):
         list_widget = self.view.get_generic_view()
+        cols = list_widget.get_columns()
+        cells = cols[0].get_cells()
+        cells[2].set_visible(False)
+        now_playing_symbol_renderer = Gtk.CellRendererPixbuf(xalign=1.0)
+
+        column_now_playing = Gtk.TreeViewColumn()
+        column_now_playing.set_property('fixed_width', 24)
+        column_now_playing.pack_start(now_playing_symbol_renderer, False)
+        column_now_playing.add_attribute(now_playing_symbol_renderer,
+                                         'visible', 10)
+        column_now_playing.add_attribute(now_playing_symbol_renderer,
+                                         'icon_name', 8)
+        list_widget.insert_column(column_now_playing, 0)
+
+        title_renderer = Gtk.CellRendererText(
+            xpad=0,
+            xalign=0.0,
+            yalign=0.5,
+            height=48,
+            ellipsize=Pango.EllipsizeMode.END
+        )
+        list_widget.add_renderer(title_renderer,
+                                 self._on_list_widget_title_render, None)
+        cols[0].add_attribute(title_renderer, 'text', 2)
+
+        star_renderer = Gtk.CellRendererPixbuf(
+            xpad=32,
+            icon_name=self.starIconName
+        )
+        list_widget.add_renderer(star_renderer,
+                                 self._on_list_widget_star_render, None)
+        cols[0].add_attribute(star_renderer, 'visible', 9)
+
+        duration_renderer = Gd.StyledTextRenderer(
+            xpad=32,
+            xalign=1.0
+        )
+        duration_renderer.add_class('dim-label')
+        list_widget.add_renderer(duration_renderer,
+                                 self._on_list_widget_duration_render, None)
+
+        artist_renderer = Gd.StyledTextRenderer(
+            xpad=32,
+            ellipsize=Pango.EllipsizeMode.END
+        )
+        artist_renderer.add_class('dim-label')
+        list_widget.add_renderer(artist_renderer,
+                                 self._on_list_widget_artist_render, None)
+        cols[0].add_attribute(artist_renderer, 'text', 3)
+
+        type_renderer = Gd.StyledTextRenderer(
+            xpad=32,
+            ellipsize=Pango.EllipsizeMode.END
+        )
+        type_renderer.add_class('dim-label')
+        list_widget.add_renderer(type_renderer,
+                                 self._on_list_widget_type_render, None)
+
+    def _add_sidebar_renderers(self):
+        list_widget = self.playlists_sidebar.get_generic_view()
 
         cols = list_widget.get_columns()
         cells = cols[0].get_cells()
@@ -652,14 +741,36 @@ class Playlist(ViewContainer):
         cols[0].clear_attributes(type_renderer)
         cols[0].add_attribute(type_renderer, "text", 2)
 
+    def _on_list_widget_title_render(self, col, cell, model, _iter, data):
+        pass
+
+    def _on_list_widget_star_render(self, col, cell, model, _iter, data):
+        pass
+
+    def _on_list_widget_duration_render(self, col, cell, model, _iter, data):
+        item = model.get_value(_iter, 5)
+        if item:
+            seconds = item.get_duration()
+            minutes = seconds // 60
+            seconds %= 60
+            cell.set_property('text', '%i:%02i' % (minutes, seconds))
+
+    def _on_list_widget_artist_render(self, col, cell, model, _iter, data):
+        pass
+
+    def _on_list_widget_type_render(self, coll, cell, model, _iter, data):
+        item = model.get_value(_iter, 5)
+        if item:
+            cell.set_property('text', item.get_string(Grl.METADATA_KEY_ALBUM))
+
     def _populate(self):
         self._init = True
         self.populate()
 
     def _add_item(self, item):
-        _iter = self._model.append()
+        _iter = self.playlists_model.append()
         self._playlist_list[item] = {"iter": _iter, "albums": []}
-        self._model.set(_iter, [2], [item])
+        self.playlists_model.set(_iter, [2], [item])
 
     def populate(self):
         for item in self.playlists_list:
@@ -669,5 +780,5 @@ class Playlist(ViewContainer):
         text_renderer = Gtk.CellRendererText()
         text_renderer.set_property('editable', True)
         text_renderer.set_property('editable-set', True)
-        self.view.get_generic_view().add_renderer(text_renderer,
-                                                  lambda *args: None, None)
+        self.playlists_sidebar.get_generic_view().add_renderer(
+            text_renderer, lambda *args: None, None)
