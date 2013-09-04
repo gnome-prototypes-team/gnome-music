@@ -61,4 +61,8 @@ class Playlists:
         )
 
     def _on_entry_parsed(self, parser, uri, metadata, data=None):
+        filename = GLib.filename_from_uri(uri)[0]
+        if filename and not os.path.isfile(filename):
+            return
+
         grilo.get_media_from_uri(uri, data)
