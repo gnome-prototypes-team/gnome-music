@@ -619,6 +619,7 @@ class PlaylistDialog():
         self.dialog_box = self.ui.get_object('dialog1')
 
         self.view = self.ui.get_object('treeview1')
+        self.selection = self.ui.get_object('treeview-selection1')
         self._add_list_renderers()
         self.view.connect('row-activated', self._on_item_activated)
 
@@ -642,6 +643,7 @@ class PlaylistDialog():
             xalign=0.0,
             width=220
         )
+        type_renderer.connect('editing-started', self._on_editing_started, None)
         cols.pack_start(type_renderer, True)
         cols.add_attribute(type_renderer, "text", 0)
         cols.add_attribute(type_renderer, "editable", 1)
@@ -660,4 +662,17 @@ class PlaylistDialog():
         self.dialog_box.destroy()
 
     def _on_item_activated(self, view, path, column):
-        self.view.set_cursor(path, column, True)
+        _iter = self.model.get_iter(path)
+        if self.model.get_value(_iter, 1):
+            self.view.set_cursor(path, column, True)
+
+    def _on_editing_started(self, renderer, editable, path, data=None):
+        editable.set_text('')
+        editable.connect('editing-done', self._on_editing_done, None)
+
+    def _on_editing_done(self, editable, data=None):
+        _iter = self.selection.get_selected()[1]
+        if editable.get_text() != '':
+            playlist.create_playlist(editable.get_text())
+            new_iter = self.model.insert_before(_iter)
+            self.model.set(new_iter, [0, 1], [editable.get_text(), False])
