@@ -802,25 +802,35 @@ class Playlist(ViewContainer):
                 self._model.set(_iter, [8, 10], [self.errorIconName, True])
 
     def _on_playlist_activated(self, widget, item_id, path):
-        self._model = Gtk.ListStore(
-            GObject.TYPE_STRING,
-            GObject.TYPE_STRING,
-            GObject.TYPE_STRING,
-            GObject.TYPE_STRING,
-            GdkPixbuf.Pixbuf,
-            GObject.TYPE_OBJECT,
-            GObject.TYPE_BOOLEAN,
-            GObject.TYPE_INT,
-            GObject.TYPE_STRING,
-            GObject.TYPE_BOOLEAN,
-            GObject.TYPE_BOOLEAN
-        )
-        self.view.set_model(self._model)
         _iter = self.playlists_model.get_iter(path)
         playlist = self.playlists_model.get_value(_iter, 2)
-        playlists.parse_playlist(self.playlists_model.get_value(_iter, 2), self._add_song)
         self.current_playlist = playlist
-        playlists.parse_playlist(playlist, self._add_song)
+
+        # if the active queue has been set by this playlist,
+        # use it as model, otherwise build the liststore
+        cached_playlist = self.player.running_playlist('Playlist', playlist)
+        if cached_playlist:
+            self._model = cached_playlist
+            currentTrack = self.player.playlist.get_iter(self.player.currentTrack.get_path())
+            self.update_model(self.player, cached_playlist,
+                              currentTrack)
+            self.view.set_model(self._model)
+        else:
+            self._model = Gtk.ListStore(
+                GObject.TYPE_STRING,
+                GObject.TYPE_STRING,
+                GObject.TYPE_STRING,
+                GObject.TYPE_STRING,
+                GdkPixbuf.Pixbuf,
+                GObject.TYPE_OBJECT,
+                GObject.TYPE_BOOLEAN,
+                GObject.TYPE_INT,
+                GObject.TYPE_STRING,
+                GObject.TYPE_BOOLEAN,
+                GObject.TYPE_BOOLEAN
+            )
+            self.view.set_model(self._model)
+            playlists.parse_playlist(playlist, self._add_song)
 
     def _add_song(self, item):
         if not item:
