@@ -187,7 +187,8 @@ class Window(Gtk.ApplicationWindow):
 
     def _on_notify_mode(self, stack, param):
         #Slide out artist list on switching to artists view
-        if stack.get_visible_child() == self.views[1]:
+        if stack.get_visible_child() == self.views[1] or \
+           stack.get_visible_child() == self.views[3]:
             stack.get_visible_child().stack.set_visible_child_name('dummy')
             stack.get_visible_child().stack.set_visible_child_name('artists')
         self._show_searchbar(False)
