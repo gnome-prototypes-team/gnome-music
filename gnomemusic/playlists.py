@@ -43,8 +43,14 @@ class Playlists:
             playlist_names.append(name)
         return playlist_names
 
-    def add_to_playlist(self, playlist_name):
-        pass
+    def add_to_playlist(self, playlist_name, uris):
+        parser = TotemPlParser.Parser()
+        playlist = TotemPlParser.Playlist()
+        pl_file = Gio.file_new_for_path(self.get_path_to_playlist(playlist_name))
+        for uri in uris:
+            _iter = playlist.append()
+            playlist.set_value(_iter, TotemPlParser.PARSER_FIELD_URI, uri)
+        parser.save(playlist, pl_file, playlist_name, TotemPlParser.ParserType.PLS)
 
     def delete_playlist(self, playlist_name):
         pass
