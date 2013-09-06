@@ -283,6 +283,9 @@ class ViewContainer(Stack):
     def _on_selection_mode_request(self, *args):
         self.header_bar._select_button.clicked()
 
+    def get_selected_track_uris(self):
+        return []
+
 
 #Class for the Empty View
 class Empty(Stack):
@@ -480,6 +483,10 @@ class Songs(ViewContainer):
     def populate(self):
         if grilo.tracker:
             GLib.idle_add(grilo.populate_songs, self._offset, self._add_item)
+
+    def get_selected_track_uris(self):
+        return [self._model.get_value(self._model.get_iter(path), 5).get_url()
+                for path in self.view.get_selection()]
 
 
 class Artists (ViewContainer):
