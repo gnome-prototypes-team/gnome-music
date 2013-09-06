@@ -634,6 +634,14 @@ class PlaylistDialog():
         self._cancel_button.connect('clicked', self._on_cancel_button_clicked)
         self._select_button.connect('clicked', self._on_selection)
 
+    def get_selected(self):
+        _iter = self.selection.get_selected()[1]
+
+        if not _iter or self.model[_iter][1]:
+            return None
+
+        return self.model[_iter][0]
+
     def _add_list_renderers(self):
         cols = Gtk.TreeViewColumn()
         type_renderer = Gd.StyledTextRenderer(
