@@ -656,10 +656,10 @@ class PlaylistDialog():
         self.model.set(add_playlist_iter, [0, 1], [_("New Playlist"), True])
 
     def _on_selection(self, select_button):
-        pass
+        self.dialog_box.response(Gtk.ResponseType.ACCEPT)
 
     def _on_cancel_button_clicked(self, cancel_button):
-        self.dialog_box.destroy()
+        self.dialog_box.response(Gtk.ResponseType.REJECT)
 
     def _on_item_activated(self, view, path, column):
         _iter = self.model.get_iter(path)
