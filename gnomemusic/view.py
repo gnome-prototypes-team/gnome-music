@@ -862,10 +862,3 @@ class Playlist(ViewContainer):
     def populate(self):
         for item in self.playlists_list:
             self._add_item(item)
-
-    def _on_add_button_clicked(self, button):
-        text_renderer = Gtk.CellRendererText()
-        text_renderer.set_property('editable', True)
-        text_renderer.set_property('editable-set', True)
-        self.playlists_sidebar.get_generic_view().add_renderer(
-            text_renderer, lambda *args: None, None)

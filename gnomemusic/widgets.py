@@ -241,8 +241,6 @@ class AlbumWidget(Gtk.EventBox):
                           self._on_view_selection_changed)
         self.filter = self.model.filter_new(None)
         self.view.set_model(self.filter)
-        selection_toolbar._add_to_playlist_button.connect(
-            'clicked', self._on_add_to_playlist_button_clicked)
         escaped_artist = GLib.markup_escape_text(artist)
         escaped_album = GLib.markup_escape_text(album)
         self.ui.get_object('artist_label').set_markup(escaped_artist)
@@ -253,10 +251,6 @@ class AlbumWidget(Gtk.EventBox):
         else:
             self.ui.get_object('released_label_info').set_text('----')
         self.player.connect('playlist-item-changed', self.update_model)
-
-    def _on_add_to_playlist_button_clicked(self, widget):
-        self.playlists = PlaylistDialog()
-        self.playlists.dialog_box.run()
 
     def _on_view_selection_changed(self, widget):
         items = self.view.get_selection()
