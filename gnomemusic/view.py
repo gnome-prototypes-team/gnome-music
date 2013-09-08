@@ -690,10 +690,13 @@ class Playlist(ViewContainer):
         self.monitors = []
         self.iter_to_clean = None
         self.iter_to_clean_model = None
+        self.current_playlist = None
         self.songs_count = 0
         self._update_songs_count()
         self.player = player
         self.player.connect('playlist-item-changed', self.update_model)
+        playlists.connect('playlist-created', self._on_playlist_created)
+        playlists.connect('song-added-to-playlist', self._on_song_added_to_playlist)
         self.show_all()
 
     def _add_list_renderers(self):
@@ -865,6 +868,9 @@ class Playlist(ViewContainer):
             self._update_songs_count()
 
     def _add_item(self, source, param, item):
+        self._add_item_to_model(item, self._model)
+
+    def _add_item_to_model(self, item, model):
         if not item:
             return
         self._offset += 1
@@ -872,7 +878,7 @@ class Playlist(ViewContainer):
         artist = item.get_string(Grl.METADATA_KEY_ARTIST)\
             or item.get_author()\
             or _("Unknown Artist")
-        _iter = self._model.insert_with_valuesv(
+        _iter = model.insert_with_valuesv(
             -1,
             [2, 3, 5, 8, 9, 10],
             [albumArtCache.get_media_title(item),
@@ -913,6 +919,17 @@ class Playlist(ViewContainer):
         playlist = self.playlists_model.get_value(_iter, 2)
         playlists.delete_playlist(playlist)
         self.playlists_model.remove(_iter)
+
+    def _on_playlist_created(self, playlists, name):
+        self._add_playlist_item(name)
+
+    def _on_song_added_to_playlist(self, playlists, name, item):
+        if name == self.current_playlist:
+            self._add_item_to_model(item, self._model)
+        else:
+            cached_playlist = self.player.running_playlist('Playlist', name)
+            if cached_playlist and cached_playlist != self._model:
+                self._add_item_to_model(item, cached_playlist)
 
     def populate(self):
         for item in self.playlists_list:
