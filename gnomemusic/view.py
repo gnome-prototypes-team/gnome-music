@@ -140,6 +140,8 @@ class ViewContainer(Stack):
         grilo.connect('ready', self._on_grilo_ready)
         self.header_bar.header_bar.connect('state-changed',
                                            self._on_state_changed)
+        self.header_bar.connect('selection-mode-changed',
+                                self._on_selection_mode_changed)
         self.view.connect('view-selection-changed',
                           self._on_view_selection_changed)
 
@@ -186,6 +188,9 @@ class ViewContainer(Stack):
         self.populate()
 
     def _on_state_changed(self, widget, data=None):
+        pass
+
+    def _on_selection_mode_changed(self, widget, data=None):
         pass
 
     def _connect_view(self):
@@ -881,6 +886,10 @@ class Playlist(ViewContainer):
         self.songs_count_label.set_text(
             ngettext(_("%d Song"), _("%d Songs"), self.songs_count)
             % self.songs_count)
+
+    def _on_selection_mode_changed(self, widget, data=None):
+        self.playlists_sidebar.set_sensitive(not self.header_bar._selectionMode)
+        self.menubutton.set_sensitive(not self.header_bar._selectionMode)
 
     def populate(self):
         for item in self.playlists_list:
