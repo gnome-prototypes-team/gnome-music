@@ -812,7 +812,7 @@ class Playlist(ViewContainer):
             self.iter_to_clean_model = self._model
         return False
 
-    def _add_item(self, item):
+    def _add_playlist_item(self, item):
         _iter = self.playlists_model.append()
         self._playlist_list[item] = {"iter": _iter, "albums": []}
         self.playlists_model.set(_iter, [2], [item])
@@ -860,11 +860,11 @@ class Playlist(ViewContainer):
                 GObject.TYPE_BOOLEAN
             )
             self.view.set_model(self._model)
-            playlists.parse_playlist(playlist, self._add_song)
+            playlists.parse_playlist(playlist, self._add_item)
             self.songs_count = 0
             self._update_songs_count()
 
-    def _add_song(self, item):
+    def _add_item(self, source, param, item):
         if not item:
             return
         self._offset += 1
@@ -916,4 +916,4 @@ class Playlist(ViewContainer):
 
     def populate(self):
         for item in self.playlists_list:
-            self._add_item(item)
+            self._add_playlist_item(item)
