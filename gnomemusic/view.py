@@ -932,5 +932,5 @@ class Playlist(ViewContainer):
                 self._add_item_to_model(item, cached_playlist)
 
     def populate(self):
-        for item in self.playlists_list:
+        for item in sorted(self.playlists_list):
             self._add_playlist_item(item)
