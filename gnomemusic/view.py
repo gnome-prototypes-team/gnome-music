@@ -636,7 +636,6 @@ class Playlist(ViewContainer):
             .add_class('songs-list')
         self._add_list_renderers()
 
-        self._playlist_list = {}
         self.playlists_model = Gtk.ListStore(
             GObject.TYPE_STRING,
             GObject.TYPE_STRING,
@@ -817,7 +816,6 @@ class Playlist(ViewContainer):
 
     def _add_playlist_item(self, item):
         _iter = self.playlists_model.append()
-        self._playlist_list[item] = {"iter": _iter, "albums": []}
         self.playlists_model.set(_iter, [2], [item])
 
     def _on_item_activated(self, widget, id, path):
