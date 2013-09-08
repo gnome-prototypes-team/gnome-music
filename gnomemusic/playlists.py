@@ -47,10 +47,23 @@ class Playlists:
         parser = TotemPlParser.Parser()
         playlist = TotemPlParser.Playlist()
         pl_file = Gio.file_new_for_path(self.get_path_to_playlist(playlist_name))
-        for uri in uris:
+
+        def parse_callback(parser, uri, metadata, data):
             _iter = playlist.append()
             playlist.set_value(_iter, TotemPlParser.PARSER_FIELD_URI, uri)
-        parser.save(playlist, pl_file, playlist_name, TotemPlParser.ParserType.PLS)
+
+        def end_callback(parser, uri, data):
+            for uri in uris:
+                _iter = playlist.append()
+
+            parser.save(playlist, pl_file, playlist_name, TotemPlParser.ParserType.PLS)
+
+        parser.connect('entry-parsed', parse_callback, playlist)
+        parser.connect('playlist-ended', end_callback, playlist)
+        parser.parse_async(
+            GLib.filename_to_uri(self.get_path_to_playlist(playlist_name), None),
+            False, None, None, None
+        )
 
     def delete_playlist(self, playlist_name):
         playlist_file = self.get_path_to_playlist(playlist_name)
