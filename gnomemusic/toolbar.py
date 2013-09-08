@@ -48,7 +48,8 @@ class ToolbarState:
 class Toolbar(GObject.GObject):
 
     __gsignals__ = {
-        'state-changed': (GObject.SIGNAL_RUN_FIRST, None, ())
+        'state-changed': (GObject.SIGNAL_RUN_FIRST, None, ()),
+        'selection-mode-changed': (GObject.SIGNAL_RUN_FIRST, None, ()),
     }
     _selectionMode = False
     _maximized = False
@@ -116,6 +117,7 @@ class Toolbar(GObject.GObject):
             self._select_button.set_active(False)
             self._select_button.show()
             self._cancel_button.hide()
+        self.emit('selection-mode-changed')
         self._update()
 
     def on_back_button_clicked(self, widget):
