@@ -660,6 +660,8 @@ class Playlist(ViewContainer):
         self.name_label = builder.get_object('playlist_name')
         self.songs_count_label = builder.get_object('songs_count')
         self.menubutton = builder.get_object('playlist_menubutton')
+        self.play_menuitem = builder.get_object('menuitem_play')
+        self.play_menuitem.connect('activate', self._on_play_activate)
         self._grid.insert_row(0)
         self._grid.attach(self.headerbar, 0, 0, 1, 1)
 
@@ -890,6 +892,16 @@ class Playlist(ViewContainer):
     def _on_selection_mode_changed(self, widget, data=None):
         self.playlists_sidebar.set_sensitive(not self.header_bar._selectionMode)
         self.menubutton.set_sensitive(not self.header_bar._selectionMode)
+
+    def _on_play_activate(self, menuitem, data=None):
+        _iter = self._model.get_iter_first()
+        if not _iter:
+            return
+
+        self.view.get_generic_view().get_selection().\
+            select_path(self._model.get_path(_iter))
+        self.view.emit('item-activated', '0',
+                       self._model.get_path(_iter))
 
     def populate(self):
         for item in self.playlists_list:
