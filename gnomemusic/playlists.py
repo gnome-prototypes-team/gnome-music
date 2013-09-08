@@ -53,7 +53,9 @@ class Playlists:
         parser.save(playlist, pl_file, playlist_name, TotemPlParser.ParserType.PLS)
 
     def delete_playlist(self, playlist_name):
-        pass
+        playlist_file = self.get_path_to_playlist(playlist_name)
+        if os.path.isfile(playlist_file):
+            os.remove(playlist_file)
 
     def get_path_to_playlist(self, playlist_name):
         return os.path.join(self.playlist_dir, playlist_name + ".pls")
