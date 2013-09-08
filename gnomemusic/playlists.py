@@ -1,10 +1,15 @@
-from gi.repository import TotemPlParser, GLib, Gio
+from gi.repository import TotemPlParser, Grl, GLib, Gio, GObject
 from gnomemusic.grilo import grilo
 
 import os
 
 
-class Playlists:
+class Playlists(GObject.GObject):
+    __gsignals__ = {
+        'playlist-created': (GObject.SIGNAL_RUN_FIRST, None, (str,)),
+        'playlist-deleted': (GObject.SIGNAL_RUN_FIRST, None, (str,)),
+        'song-added-to-playlist': (GObject.SIGNAL_RUN_FIRST, None, (str, Grl.Media)),
+    }
     instance = None
 
     @classmethod
@@ -16,6 +21,7 @@ class Playlists:
         return self.instance
 
     def __init__(self):
+        GObject.GObject.__init__(self)
         self.playlist_dir = os.path.join(GLib.get_user_data_dir(),
                                          'gnome-music',
                                          'playlists')
@@ -31,6 +37,7 @@ class Playlists:
             _iter = TotemPlParser.PlaylistIter()
             playlist.append(_iter)
         parser.save(playlist, pl_file, name, TotemPlParser.ParserType.PLS)
+        self.emit('playlist-created', name)
         return False
 
     def get_playlists(self):
@@ -55,6 +62,11 @@ class Playlists:
         def end_callback(parser, uri, data):
             for uri in uris:
                 _iter = playlist.append()
+                playlist.set_value(_iter, TotemPlParser.PARSER_FIELD_URI, uri)
+
+                def get_callback(source, param, item):
+                    self.emit('song-added-to-playlist', playlist_name, item)
+                grilo.get_media_from_uri(uri, get_callback)
 
             parser.save(playlist, pl_file, playlist_name, TotemPlParser.ParserType.PLS)
 
@@ -69,6 +81,7 @@ class Playlists:
         playlist_file = self.get_path_to_playlist(playlist_name)
         if os.path.isfile(playlist_file):
             os.remove(playlist_file)
+            self.emit('playlist-deleted', playlist_name)
 
     def get_path_to_playlist(self, playlist_name):
         return os.path.join(self.playlist_dir, playlist_name + ".pls")
