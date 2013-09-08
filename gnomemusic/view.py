@@ -662,6 +662,8 @@ class Playlist(ViewContainer):
         self.menubutton = builder.get_object('playlist_menubutton')
         self.play_menuitem = builder.get_object('menuitem_play')
         self.play_menuitem.connect('activate', self._on_play_activate)
+        self.delete_menuitem = builder.get_object('menuitem_delete')
+        self.delete_menuitem.connect('activate', self._on_delete_activate)
         self._grid.insert_row(0)
         self._grid.attach(self.headerbar, 0, 0, 1, 1)
 
@@ -902,6 +904,15 @@ class Playlist(ViewContainer):
             select_path(self._model.get_path(_iter))
         self.view.emit('item-activated', '0',
                        self._model.get_path(_iter))
+
+    def _on_delete_activate(self, menuitem, data=None):
+        _iter = self.playlists_sidebar.get_generic_view().get_selection().get_selected()[1]
+        if not _iter:
+            return
+
+        playlist = self.playlists_model.get_value(_iter, 2)
+        playlists.delete_playlist(playlist)
+        self.playlists_model.remove(_iter)
 
     def populate(self):
         for item in self.playlists_list:
