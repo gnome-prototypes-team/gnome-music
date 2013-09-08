@@ -41,7 +41,7 @@ from gi.repository import GdkPixbuf
 from gi.repository import Tracker
 from gi.repository import Gio
 
-from gettext import gettext as _
+from gettext import gettext as _, ngettext
 from gnomemusic.grilo import grilo
 import gnomemusic.widgets as Widgets
 from gnomemusic.playlists import Playlists
@@ -646,9 +646,18 @@ class Playlist(ViewContainer):
             GObject.TYPE_BOOLEAN
         )
 
+        builder = Gtk.Builder()
+        builder.add_from_resource('/org/gnome/Music/PlaylistControls.ui')
         self.playlists_sidebar = Gd.MainView(
             shadow_type=Gtk.ShadowType.NONE
         )
+        self.headerbar = builder.get_object('grid')
+        self.name_label = builder.get_object('playlist_name')
+        self.songs_count_label = builder.get_object('songs_count')
+        self.menubutton = builder.get_object('playlist_menubutton')
+        self._grid.insert_row(0)
+        self._grid.attach(self.headerbar, 0, 0, 1, 1)
+
         self.playlists_sidebar.set_model(self.playlists_model)
         self.playlists_sidebar.set_view_type(Gd.MainViewType.LIST)
         self.playlists_sidebar.set_hexpand(False)
@@ -657,9 +666,9 @@ class Playlist(ViewContainer):
             Gtk.SelectionMode.SINGLE)
         self.playlists_sidebar.connect('item-activated', self._on_playlist_activated)
         self._grid.insert_column(0)
-        self._grid.attach(self.playlists_sidebar, 0, 0, 1, 1)
+        self._grid.attach(self.playlists_sidebar, 0, 0, 1, 2)
         self._grid.attach(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL),
-                          1, 0, 1, 1)
+                          0, 0, 1, 2)
         self._add_sidebar_renderers()
         if (Gtk.Settings.get_default().get_property(
                 'gtk_application_prefer_dark_theme')):
@@ -672,6 +681,8 @@ class Playlist(ViewContainer):
         self.monitors = []
         self.iter_to_clean = None
         self.iter_to_clean_model = None
+        self.songs_count = 0
+        self._update_songs_count()
         self.player = player
         self.player.connect('playlist-item-changed', self.update_model)
         self.show_all()
@@ -812,6 +823,7 @@ class Playlist(ViewContainer):
         _iter = self.playlists_model.get_iter(path)
         playlist = self.playlists_model.get_value(_iter, 2)
         self.current_playlist = playlist
+        self.name_label.set_text(playlist)
 
         # if the active queue has been set by this playlist,
         # use it as model, otherwise build the liststore
@@ -822,6 +834,8 @@ class Playlist(ViewContainer):
             self.update_model(self.player, cached_playlist,
                               currentTrack)
             self.view.set_model(self._model)
+            self.songs_count = cached_playlist.iter_n_children(None)
+            self._update_songs_count()
         else:
             self._model = Gtk.ListStore(
                 GObject.TYPE_STRING,
@@ -838,6 +852,8 @@ class Playlist(ViewContainer):
             )
             self.view.set_model(self._model)
             playlists.parse_playlist(playlist, self._add_song)
+            self.songs_count = 0
+            self._update_songs_count()
 
     def _add_song(self, item):
         if not item:
@@ -858,6 +874,13 @@ class Playlist(ViewContainer):
                                                  None))
         self.monitors[(self._offset - 1)].connect('changed',
                                                   self._on_item_changed, _iter)
+        self.songs_count += 1
+        self._update_songs_count()
+
+    def _update_songs_count(self):
+        self.songs_count_label.set_text(
+            ngettext(_("%d Song"), _("%d Songs"), self.songs_count)
+            % self.songs_count)
 
     def populate(self):
         for item in self.playlists_list:
