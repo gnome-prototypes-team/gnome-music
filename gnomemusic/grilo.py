@@ -60,7 +60,6 @@ class Grilo(GObject.GObject):
 
         self.sources = {}
         self.tracker = None
-        self.filesystem = None
 
         self.registry = Grl.Registry.get_default()
         self.registry.connect('source_added', self._on_source_added)
@@ -84,9 +83,6 @@ class Grilo(GObject.GObject):
 
                 if self.tracker is not None:
                     self.emit('ready')
-        elif id == 'grl-filesystem':
-            self.sources[id] = mediaSource
-            self.filesystem = mediaSource
 
     def _on_source_removed(self, pluginRegistry, mediaSource):
         print('source removed')
@@ -129,13 +125,15 @@ class Grilo(GObject.GObject):
         self.tracker.query(query, self.METADATA_THUMBNAIL_KEYS, options, _callback, None)
 
     def get_media_from_uri(self, uri, callback):
-        if not self.filesystem.test_media_from_uri(uri):
-            return
         options = self.options.copy()
-        media = self.filesystem.get_media_from_uri_sync(
-            uri, self.METADATA_KEYS, options
-        )
-        callback(media)
+        query = Query.get_song_with_url(uri)
+
+        def _callback(source, param, item, count, data, error):
+            if not error:
+                callback(source, param, item)
+                return
+
+        self.tracker.query(query, self.METADATA_KEYS, options, _callback, None)
 
 Grl.init(None)
 
