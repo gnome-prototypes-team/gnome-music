@@ -195,7 +195,7 @@ class Window(Gtk.ApplicationWindow):
         if stack.get_visible_child() == self.views[1] or \
            stack.get_visible_child() == self.views[3]:
             stack.get_visible_child().stack.set_visible_child_name('dummy')
-            stack.get_visible_child().stack.set_visible_child_name('artists')
+            stack.get_visible_child().stack.set_visible_child_name('sidebar')
         self._show_searchbar(False)
 
     def _toggle_view(self, btn, i):
