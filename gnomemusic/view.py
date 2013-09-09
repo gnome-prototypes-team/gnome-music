@@ -516,8 +516,6 @@ class Artists (ViewContainer):
         self.view.get_style_context().add_class('artist-panel')
         self.view.get_generic_view().get_selection().set_mode(
             Gtk.SelectionMode.SINGLE)
-        self._grid.attach(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL),
-                          1, 0, 1, 1)
         self._grid.attach(self.artistAlbumsStack, 2, 0, 2, 2)
         self._add_list_renderers()
         if (Gtk.Settings.get_default().get_property(
@@ -675,8 +673,6 @@ class Playlist(ViewContainer):
         self.playlists_sidebar.connect('item-activated', self._on_playlist_activated)
         self._grid.insert_column(0)
         self._grid.attach(self.playlists_sidebar, 0, 0, 1, 2)
-        self._grid.attach(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL),
-                          0, 0, 1, 2)
         self._add_sidebar_renderers()
         if (Gtk.Settings.get_default().get_property(
                 'gtk_application_prefer_dark_theme')):
