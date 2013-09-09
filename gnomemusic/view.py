@@ -66,10 +66,10 @@ class ViewContainer(Stack):
     countQuery = None
     filter = None
 
-    def __init__(self, title, header_bar, selection_toolbar, useStack=False):
+    def __init__(self, title, header_bar, selection_toolbar, use_sidebar=False, sidebar=None):
         Stack.__init__(self,
                        transition_type=StackTransitionType.CROSSFADE)
-        self._grid = Gtk.Grid(orientation=Gtk.Orientation.VERTICAL)
+        self._grid = Gtk.Grid(orientation=Gtk.Orientation.HORIZONTAL)
         self._iconWidth = -1
         self._iconHeight = 128
         self._offset = 0
@@ -100,16 +100,19 @@ class ViewContainer(Stack):
         self.selection_toolbar = selection_toolbar
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         box.pack_start(self.view, True, True, 0)
-        if useStack:
+        if use_sidebar:
             self.stack = Stack(
                 transition_type=StackTransitionType.SLIDE_RIGHT,
             )
             dummy = Gtk.Frame(visible=False)
             self.stack.add_named(dummy, 'dummy')
-            self.stack.add_named(box, 'artists')
+            if sidebar:
+                self.stack.add_named(sidebar, 'sidebar')
+            else:
+                self.stack.add_named(box, 'sidebar')
             self.stack.set_visible_child_name('dummy')
             self._grid.add(self.stack)
-        else:
+        if not use_sidebar or sidebar:
             self._grid.add(box)
 
         self._cached_count = -1
@@ -626,13 +629,30 @@ class Playlist(ViewContainer):
     playlists_list = playlists.get_playlists()
 
     def __init__(self, header_bar, selection_toolbar, player):
+        self.playlists_sidebar = Gd.MainView(
+            shadow_type=Gtk.ShadowType.NONE
+        )
+
         ViewContainer.__init__(self, _("Playlists"), header_bar,
-                               selection_toolbar, True)
+                               selection_toolbar, True, self.playlists_sidebar)
 
         self.view.set_view_type(Gd.MainViewType.LIST)
         self.view.get_generic_view().get_style_context()\
             .add_class('songs-list')
         self._add_list_renderers()
+
+        builder = Gtk.Builder()
+        builder.add_from_resource('/org/gnome/Music/PlaylistControls.ui')
+        self.headerbar = builder.get_object('grid')
+        self.name_label = builder.get_object('playlist_name')
+        self.songs_count_label = builder.get_object('songs_count')
+        self.menubutton = builder.get_object('playlist_menubutton')
+        self.play_menuitem = builder.get_object('menuitem_play')
+        self.play_menuitem.connect('activate', self._on_play_activate)
+        self.delete_menuitem = builder.get_object('menuitem_delete')
+        self.delete_menuitem.connect('activate', self._on_delete_activate)
+        self._grid.insert_row(0)
+        self._grid.attach(self.headerbar, 1, 0, 1, 1)
 
         self.playlists_model = Gtk.ListStore(
             GObject.TYPE_STRING,
@@ -647,23 +667,6 @@ class Playlist(ViewContainer):
             GObject.TYPE_BOOLEAN,
             GObject.TYPE_BOOLEAN
         )
-
-        builder = Gtk.Builder()
-        builder.add_from_resource('/org/gnome/Music/PlaylistControls.ui')
-        self.playlists_sidebar = Gd.MainView(
-            shadow_type=Gtk.ShadowType.NONE
-        )
-        self.headerbar = builder.get_object('grid')
-        self.name_label = builder.get_object('playlist_name')
-        self.songs_count_label = builder.get_object('songs_count')
-        self.menubutton = builder.get_object('playlist_menubutton')
-        self.play_menuitem = builder.get_object('menuitem_play')
-        self.play_menuitem.connect('activate', self._on_play_activate)
-        self.delete_menuitem = builder.get_object('menuitem_delete')
-        self.delete_menuitem.connect('activate', self._on_delete_activate)
-        self._grid.insert_row(0)
-        self._grid.attach(self.headerbar, 0, 0, 1, 1)
-
         self.playlists_sidebar.set_model(self.playlists_model)
         self.playlists_sidebar.set_view_type(Gd.MainViewType.LIST)
         self.playlists_sidebar.set_hexpand(False)
@@ -672,7 +675,8 @@ class Playlist(ViewContainer):
             Gtk.SelectionMode.SINGLE)
         self.playlists_sidebar.connect('item-activated', self._on_playlist_activated)
         self._grid.insert_column(0)
-        self._grid.attach(self.playlists_sidebar, 0, 0, 1, 2)
+        self._grid.child_set_property(self.stack, 'top-attach', 0)
+        self._grid.child_set_property(self.stack, 'height', 2)
         self._add_sidebar_renderers()
         if (Gtk.Settings.get_default().get_property(
                 'gtk_application_prefer_dark_theme')):
