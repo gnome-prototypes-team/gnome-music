@@ -213,7 +213,7 @@ class Window(Gtk.ApplicationWindow):
             self.toolbar.searchbar._search_entry.set_text('')
 
     def _on_add_to_playlist_button_clicked(self, widget):
-        self.playlists = Widgets.PlaylistDialog()
+        self.playlists = Widgets.PlaylistDialog(self)
         if self.playlists.dialog_box.run() == Gtk.ResponseType.ACCEPT:
             playlist.add_to_playlist(
                 self.playlists.get_selected(),

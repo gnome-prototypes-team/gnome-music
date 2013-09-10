@@ -607,10 +607,11 @@ class ArtistAlbumWidget(Gtk.HBox):
 
 
 class PlaylistDialog():
-    def __init__(self):
+    def __init__(self, parent):
         self.ui = Gtk.Builder()
         self.ui.add_from_resource('/org/gnome/Music/PlaylistDialog.ui')
         self.dialog_box = self.ui.get_object('dialog1')
+        self.dialog_box.set_transient_for(parent)
 
         self.view = self.ui.get_object('treeview1')
         self.selection = self.ui.get_object('treeview-selection1')
