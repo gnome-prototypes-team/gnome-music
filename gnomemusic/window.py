@@ -213,10 +213,16 @@ class Window(Gtk.ApplicationWindow):
             self.toolbar.searchbar._search_entry.set_text('')
 
     def _on_add_to_playlist_button_clicked(self, widget):
-        self.playlists = Widgets.PlaylistDialog(self)
-        if self.playlists.dialog_box.run() == Gtk.ResponseType.ACCEPT:
-            playlist.add_to_playlist(
-                self.playlists.get_selected(),
-                self._stack.get_visible_child().get_selected_track_uris())
-        self.toolbar.set_selection_mode(False)
-        self.playlists.dialog_box.destroy()
+        def callback(selected_uris):
+            if len(selected_uris) < 1:
+                return
+
+            add_to_playlist = Widgets.PlaylistDialog(self)
+            if add_to_playlist.dialog_box.run() == Gtk.ResponseType.ACCEPT:
+                playlist.add_to_playlist(
+                    add_to_playlist.get_selected(),
+                    selected_uris)
+            self.toolbar.set_selection_mode(False)
+            add_to_playlist.dialog_box.destroy()
+
+        self._stack.get_visible_child().get_selected_track_uris(callback)
