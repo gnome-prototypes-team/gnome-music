@@ -160,7 +160,7 @@ class ViewContainer(Stack):
             self.view.set_selection_mode(True)
             self.header_bar.set_selection_mode(True)
             self.selection_toolbar.eventbox.set_visible(True)
-            self.selection_toolbar._add_to_playlist_button.sensitive = False
+            self.selection_toolbar._add_to_playlist_button.set_sensitive(False)
         else:
             self.view.set_selection_mode(False)
             self.header_bar.set_selection_mode(False)
@@ -341,6 +341,12 @@ class Albums(ViewContainer):
         if grilo.tracker:
             GLib.idle_add(grilo.populate_albums, self._offset, self._add_item)
 
+    def get_selected_track_uris(self):
+        uris = []
+        for path in self._albumWidget.view.get_selection():
+            _iter = self._albumWidget.model.get_iter(path)
+            uris.append(self._albumWidget.model.get_value(_iter, 5).get_url())
+        return uris
 
 class Songs(ViewContainer):
     def __init__(self, header_bar, selection_toolbar, player):
