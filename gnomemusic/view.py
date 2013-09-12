@@ -539,6 +539,9 @@ class Artists (ViewContainer):
         self.artists_counter = 0
         self.player = player
         self._artists = {}
+        self.albums_selected = []
+        self.items_selected = []
+        self.items_selected_callback = None
         self.countQuery = Query.ARTISTS_COUNT
         self.artistAlbumsStack = Stack(
             transition_type=StackTransitionType.CROSSFADE,
@@ -660,7 +663,36 @@ class Artists (ViewContainer):
                     self._last_selection)
 
     def get_selected_track_uris(self, callback):
-        callback([])
+        self.items_selected = []
+        self.items_selected_callback = callback
+        self.albums_index = 0
+        self.albums_selected = []
+
+        for path in self.view.get_selection():
+            _iter = self._model.get_iter(path)
+            artist = self._model.get_value(_iter, 2)
+            albums = self._artists[artist.lower()]['albums']
+            if (self._model.get_string_from_iter(_iter) !=
+                    self._model.get_string_from_iter(self._allIter)):
+                self.albums_selected.extend(albums)
+
+        if len(self.albums_selected):
+            self._get_selected_album_songs()
+
+    def _get_selected_album_songs(self):
+        grilo.populate_album_songs(
+            self.albums_selected[self.albums_index].get_id(),
+            self._add_selected_item)
+        self.albums_index += 1
+
+    def _add_selected_item(self, source, param, item, remaining):
+        if item:
+            self.items_selected.append(item.get_url())
+        if remaining == 0:
+            if self.albums_index < len(self.albums_selected):
+                self._get_selected_album_songs()
+            else:
+                self.items_selected_callback(self.items_selected)
 
 
 class Playlist(ViewContainer):
