@@ -86,7 +86,7 @@ class Playlists(GObject.GObject):
             self.emit('playlist-deleted', playlist_name)
 
     def get_path_to_playlist(self, playlist_name):
-        return os.path.join(self.playlist_dir, playlist_name + ".pls")
+        return os.path.join(self.playlist_dir, "%s.pls" % playlist_name)
 
     def parse_playlist(self, playlist_name, callback):
         parser = TotemPlParser.Parser()
