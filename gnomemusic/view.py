@@ -231,7 +231,7 @@ class ViewContainer(Stack):
         if error:
             self._model.set(_iter, [8, 10], [self.errorIconName, True])
 
-    def _add_item(self, source, param, item):
+    def _add_item(self, source, param, item, remaining):
         if not item:
             return
         self._offset += 1
@@ -387,7 +387,7 @@ class Songs(ViewContainer):
             self.iter_to_clean = child_iter.copy()
         return False
 
-    def _add_item(self, source, param, item):
+    def _add_item(self, source, param, item, remaining):
         if not item:
             return
         self._offset += 1
@@ -598,7 +598,7 @@ class Artists (ViewContainer):
         self._artistAlbumsWidget = self.new_artistAlbumsWidget
         GLib.idle_add(self.artistAlbumsStack.set_visible_child_name, child_name)
 
-    def _add_item(self, source, param, item):
+    def _add_item(self, source, param, item, remaining):
         if item is None:
             return
         self._offset += 1

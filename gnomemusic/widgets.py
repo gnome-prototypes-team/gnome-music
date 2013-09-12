@@ -281,7 +281,7 @@ class AlbumWidget(Gtk.EventBox):
         if error:
             self.model.set(_iter, [7, 9], [ERROR_ICON_NAME, True])
 
-    def _on_populate_album_songs(self, source, prefs, track):
+    def _on_populate_album_songs(self, source, prefs, track, remaining):
         if track:
             self.tracks.append(track)
             self.duration = self.duration + track.get_duration()
@@ -494,7 +494,7 @@ class AllArtistsAlbums(ArtistAlbums):
             GLib.idle_add(grilo.populate_albums,
                           self._offset, self.add_item, 5)
 
-    def add_item(self, source, param, item):
+    def add_item(self, source, param, item, remaining):
         if item:
             self._offset += 1
             self.add_album(item)
@@ -539,7 +539,7 @@ class ArtistAlbumWidget(Gtk.HBox):
             song_widget.now_playing_sign.show()
             song_widget.can_be_played = False
 
-    def get_songs(self, source, prefs, track):
+    def get_songs(self, source, prefs, track, remaining):
         if track:
             self.tracks.append(track)
         else:
