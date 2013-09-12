@@ -43,6 +43,7 @@ from gi.repository import Gio
 
 from gettext import gettext as _, ngettext
 from gnomemusic.grilo import grilo
+from gnomemusic.toolbar import ToolbarState
 import gnomemusic.widgets as Widgets
 from gnomemusic.playlists import Playlists
 from gnomemusic.query import Query
@@ -319,6 +320,9 @@ class Albums(ViewContainer):
         self._albumWidget = Widgets.AlbumWidget(player)
         self.player = player
         self.add(self._albumWidget)
+        self.albums_selected = []
+        self.items_selected = []
+        self.items_selected_callback = None
 
     def _back_button_clicked(self, widget, data=None):
         self.set_visible_child(self._grid)
@@ -342,11 +346,36 @@ class Albums(ViewContainer):
             GLib.idle_add(grilo.populate_albums, self._offset, self._add_item)
 
     def get_selected_track_uris(self, callback):
-        uris = []
-        for path in self._albumWidget.view.get_selection():
-            _iter = self._albumWidget.model.get_iter(path)
-            uris.append(self._albumWidget.model.get_value(_iter, 5).get_url())
-        callback(uris)
+        if self.header_bar._state == ToolbarState.SINGLE:
+            uris = []
+            for path in self._albumWidget.view.get_selection():
+                _iter = self._albumWidget.model.get_iter(path)
+                uris.append(self._albumWidget.model.get_value(_iter, 5).get_url())
+            callback(uris)
+        else:
+            self.items_selected = []
+            self.items_selected_callback = callback
+            self.albums_index = 0
+            self.albums_selected = [self._model.get_value(self._model.get_iter(path), 5)
+                                    for path in self.view.get_selection()]
+            if len(self.albums_selected):
+                self._get_selected_album_songs()
+
+    def _get_selected_album_songs(self):
+        grilo.populate_album_songs(
+            self.albums_selected[self.albums_index].get_id(),
+            self._add_selected_item)
+        self.albums_index += 1
+
+    def _add_selected_item(self, source, param, item, remaining):
+        if item:
+            self.items_selected.append(item.get_url())
+        if remaining == 0:
+            if self.albums_index < len(self.albums_selected):
+                self._get_selected_album_songs()
+            else:
+                self.items_selected_callback(self.items_selected)
+
 
 class Songs(ViewContainer):
     def __init__(self, header_bar, selection_toolbar, player):
@@ -629,6 +658,9 @@ class Artists (ViewContainer):
             if self._last_selection is not None:
                 self.view.get_generic_view().get_selection().select_iter(
                     self._last_selection)
+
+    def get_selected_track_uris(self, callback):
+        callback([])
 
 
 class Playlist(ViewContainer):
