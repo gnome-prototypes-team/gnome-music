@@ -9,6 +9,7 @@ class Playlists(GObject.GObject):
         'playlist-created': (GObject.SIGNAL_RUN_FIRST, None, (str,)),
         'playlist-deleted': (GObject.SIGNAL_RUN_FIRST, None, (str,)),
         'song-added-to-playlist': (GObject.SIGNAL_RUN_FIRST, None, (str, Grl.Media)),
+        'song-removed-from-playlist': (GObject.SIGNAL_RUN_FIRST, None, (str, str)),
     }
     instance = None
 
@@ -70,6 +71,30 @@ class Playlists(GObject.GObject):
                     self.emit('song-added-to-playlist', playlist_name, item)
                 grilo.get_media_from_uri(uri, get_callback)
 
+            parser.save(playlist, pl_file, playlist_name, TotemPlParser.ParserType.PLS)
+
+        parser.connect('entry-parsed', parse_callback, playlist)
+        parser.connect('playlist-ended', end_callback, playlist)
+        parser.parse_async(
+            GLib.filename_to_uri(self.get_path_to_playlist(playlist_name), None),
+            False, None, None, None
+        )
+
+    def remove_from_playlist(self, playlist_name, uris):
+        parser = TotemPlParser.Parser()
+        playlist = TotemPlParser.Playlist()
+        pl_file = Gio.file_new_for_path(self.get_path_to_playlist(playlist_name))
+
+        def parse_callback(parser, uri, metadata, data):
+            if uri in uris:
+                uris.remove(uri)
+                self.emit('song-removed-from-playlist', playlist_name, uri)
+            else:
+                _iter = TotemPlParser.PlaylistIter()
+                playlist.append(_iter)
+                playlist.set_value(_iter, TotemPlParser.PARSER_FIELD_URI, uri)
+
+        def end_callback(parser, uri, data):
             parser.save(playlist, pl_file, playlist_name, TotemPlParser.ParserType.PLS)
 
         parser.connect('entry-parsed', parse_callback, playlist)
