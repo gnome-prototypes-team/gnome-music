@@ -766,6 +766,7 @@ class Playlist(ViewContainer):
         self.player.connect('playlist-item-changed', self.update_model)
         playlists.connect('playlist-created', self._on_playlist_created)
         playlists.connect('song-added-to-playlist', self._on_song_added_to_playlist)
+        playlists.connect('song-removed-from-playlist', self._on_song_removed_from_playlist)
         self.show_all()
 
     def _add_list_renderers(self):
@@ -998,6 +999,21 @@ class Playlist(ViewContainer):
             cached_playlist = self.player.running_playlist('Playlist', name)
             if cached_playlist and cached_playlist != self._model:
                 self._add_item_to_model(item, cached_playlist)
+
+    def _on_song_removed_from_playlist(self, playlists, name, uri):
+        if name == self.current_playlist:
+            model = self._model
+        else:
+            cached_playlist = self.player.running_playlist('Playlist', name)
+            if cached_playlist and cached_playlist != self._model:
+                model = cached_playlist
+            else:
+                return
+
+        for row in model:
+            if row[5].get_url() == uri:
+                self._model.remove(row.iter)
+                return
 
     def populate(self):
         for item in sorted(self.playlists_list):
