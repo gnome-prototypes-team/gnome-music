@@ -168,8 +168,11 @@ class Window(Gtk.ApplicationWindow):
             self._stack.add_titled(self.views[0], _("Empty"), _("Empty"))
 
         self.toolbar._search_button.connect('toggled', self._on_search_toggled)
+        self.toolbar.connect('selection-mode-changed', self._on_selection_mode_changed)
         self.selection_toolbar._add_to_playlist_button.connect(
             'clicked', self._on_add_to_playlist_button_clicked)
+        self.selection_toolbar._remove_from_playlist_button.connect(
+            'clicked', self._on_remove_from_playlist_button_clicked)
 
         self.toolbar.set_state(ToolbarState.ALBUMS)
         self.toolbar.header_bar.show()
@@ -212,7 +215,16 @@ class Window(Gtk.ApplicationWindow):
         else:
             self.toolbar.searchbar._search_entry.set_text('')
 
+    def _on_selection_mode_changed(self, widget, data=None):
+        if self.toolbar._selectionMode:
+            in_playlist = self._stack.get_visible_child() == self.views[3]
+            self.selection_toolbar._add_to_playlist_button.set_visible(not in_playlist)
+            self.selection_toolbar._remove_from_playlist_button.set_visible(in_playlist)
+
     def _on_add_to_playlist_button_clicked(self, widget):
+        if self._stack.get_visible_child() == self.views[3]:
+            return
+
         def callback(selected_uris):
             if len(selected_uris) < 1:
                 return
@@ -224,5 +236,20 @@ class Window(Gtk.ApplicationWindow):
                     selected_uris)
             self.toolbar.set_selection_mode(False)
             add_to_playlist.dialog_box.destroy()
+
+        self._stack.get_visible_child().get_selected_track_uris(callback)
+
+    def _on_remove_from_playlist_button_clicked(self, widget):
+        if self._stack.get_visible_child() != self.views[3]:
+            return
+
+        def callback(selected_uris):
+            if len(selected_uris) < 1:
+                return
+
+            playlist.remove_from_playlist(
+                self.views[3].current_playlist,
+                selected_uris)
+            self.toolbar.set_selection_mode(False)
 
         self._stack.get_visible_child().get_selected_track_uris(callback)
