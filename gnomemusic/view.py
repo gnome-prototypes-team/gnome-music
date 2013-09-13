@@ -359,7 +359,7 @@ class Albums(ViewContainer):
             self.items_selected = []
             self.items_selected_callback = callback
             self.albums_index = 0
-            self.albums_selected = [self._model.get_value(self._model.get_iter(path), 5)
+            self.albums_selected = [self.filter.get_value(self.filter.get_iter(path), 5)
                                     for path in self.view.get_selection()]
             if len(self.albums_selected):
                 self._get_selected_album_songs()
@@ -531,7 +531,7 @@ class Songs(ViewContainer):
             GLib.idle_add(grilo.populate_songs, self._offset, self._add_item)
 
     def get_selected_track_uris(self, callback):
-        callback([self._model.get_value(self._model.get_iter(path), 5).get_url()
+        callback([self.filter.get_value(self.filter.get_iter(path), 5).get_url()
                   for path in self.view.get_selection()])
 
 
@@ -672,11 +672,11 @@ class Artists (ViewContainer):
         self.albums_selected = []
 
         for path in self.view.get_selection():
-            _iter = self._model.get_iter(path)
-            artist = self._model.get_value(_iter, 2)
+            _iter = self.filter.get_iter(path)
+            artist = self.filter.get_value(_iter, 2)
             albums = self._artists[artist.lower()]['albums']
-            if (self._model.get_string_from_iter(_iter) !=
-                    self._model.get_string_from_iter(self._allIter)):
+            if (self.filter.get_string_from_iter(_iter) !=
+                    self.filter.get_string_from_iter(self._allIter)):
                 self.albums_selected.extend(albums)
 
         if len(self.albums_selected):
@@ -1023,5 +1023,5 @@ class Playlist(ViewContainer):
             self._add_playlist_item(item)
 
     def get_selected_track_uris(self, callback):
-        callback([self._model.get_value(self._model.get_iter(path), 5).get_url()
+        callback([self.filter.get_value(self.filter.get_iter(path), 5).get_url()
                   for path in self.view.get_selection()])
