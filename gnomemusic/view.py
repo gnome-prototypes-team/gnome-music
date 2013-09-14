@@ -189,6 +189,11 @@ class ViewContainer(Stack):
             set_sensitive(len(items) > 0)
         self.selection_toolbar._remove_from_playlist_button.\
             set_sensitive(len(items) > 0)
+        if len(items) > 0:
+            self.header_bar._selection_menu_label.set_text(
+                ngettext(_("Selected %d item"), _("Selected %d items"), len(items)) % len(items))
+        else:
+            self.header_bar._selection_menu_label.set_text(_("Click on items to select them"))
 
     def _populate(self, data=None):
         self._init = True

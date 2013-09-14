@@ -68,6 +68,7 @@ class Toolbar(GObject.GObject):
         self._close_button = self._ui.get_object('close-button')
         self._selection_menu = self._ui.get_object('selection-menu')
         self._selection_menu_button = self._ui.get_object('selection-menu-button')
+        self._selection_menu_label = self._ui.get_object('selection-menu-button-label')
         self._selection_menu_button.set_relief(Gtk.ReliefStyle.NONE)
         self._search_button = self._ui.get_object('search-button')
         if Gtk.Widget.get_default_direction() is Gtk.TextDirection.RTL:

@@ -35,7 +35,7 @@ from gi.repository import Gtk, Gd, GLib, GObject, Pango
 from gi.repository import GdkPixbuf, Gio
 from gi.repository import Grl
 from gi.repository import Tracker
-from gettext import gettext as _
+from gettext import gettext as _, ngettext
 from gnomemusic.grilo import grilo
 from gnomemusic.query import Query
 from gnomemusic.albumArtCache import AlbumArtCache
@@ -256,6 +256,11 @@ class AlbumWidget(Gtk.EventBox):
         items = self.view.get_selection()
         self.selection_toolbar\
             ._add_to_playlist_button.set_sensitive(len(items) > 0)
+        if len(items) > 0:
+            self.header_bar._selection_menu_label.set_text(
+                ngettext(_("Selected %d item"), _("Selected %d items"), len(items)) % len(items))
+        else:
+            self.header_bar._selection_menu_label.set_text(_("Click on items to select them"))
 
     def _on_header_cancel_button_clicked(self, button):
         self.view.set_selection_mode(False)
@@ -269,6 +274,7 @@ class AlbumWidget(Gtk.EventBox):
             self.player.eventBox.set_visible(False)
             self.selection_toolbar.eventbox.set_visible(True)
             self.selection_toolbar._add_to_playlist_button.set_sensitive(False)
+            self.header_bar.header_bar.set_custom_title(self.header_bar._selection_menu_button)
         else:
             self.view.set_selection_mode(False)
             self.header_bar.set_selection_mode(False)
