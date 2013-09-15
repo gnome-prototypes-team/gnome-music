@@ -48,7 +48,8 @@ class Playlists(GObject.GObject):
         playlist_names = []
         for playlist_file in playlist_files:
             name, ext = os.path.splitext(playlist_file)
-            playlist_names.append(name)
+            if ext == '.pls':
+                playlist_names.append(name)
         return playlist_names
 
     def add_to_playlist(self, playlist_name, uris):
