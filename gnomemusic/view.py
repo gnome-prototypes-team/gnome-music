@@ -884,12 +884,13 @@ class Playlist(ViewContainer):
     def update_model(self, player, playlist, currentIter):
         if self.iter_to_clean:
             self.iter_to_clean_model.set_value(self.iter_to_clean, 10, False)
-        if playlist != self._model:
+        if playlist != self.filter:
             return False
 
-        self._model.set_value(currentIter, 10, True)
-        if self._model.get_value(currentIter, 8) != self.errorIconName:
-            self.iter_to_clean = currentIter.copy()
+        child_iter = self.filter.convert_iter_to_child_iter(currentIter)
+        self._model.set_value(child_iter, 10, True)
+        if self._model.get_value(child_iter, 8) != self.errorIconName:
+            self.iter_to_clean = child_iter.copy()
             self.iter_to_clean_model = self._model
         return False
 
@@ -898,9 +899,10 @@ class Playlist(ViewContainer):
         self.playlists_model.set(_iter, [2], [item])
 
     def _on_item_activated(self, widget, id, path):
-        _iter = self._model.get_iter(path)
-        if self._model.get_value(_iter, 8) != self.errorIconName:
-            self.player.set_playlist('Playlist', self.current_playlist, self._model, _iter, 5)
+        _iter = self.filter.get_iter(path)
+        child_iter = self.filter.convert_iter_to_child_iter(_iter)
+        if self._model.get_value(child_iter, 8) != self.errorIconName:
+            self.player.set_playlist('Playlist', self.current_playlist, self.filter, _iter, 5)
             self.player.set_playing(True)
 
     def _on_item_changed(self, monitor, file1, file2, event, _iter):
@@ -918,12 +920,13 @@ class Playlist(ViewContainer):
         # use it as model, otherwise build the liststore
         cached_playlist = self.player.running_playlist('Playlist', playlist)
         if cached_playlist:
-            self._model = cached_playlist
+            self._model = cached_playlist.get_model()
+            self.filter = cached_playlist
             currentTrack = self.player.playlist.get_iter(self.player.currentTrack.get_path())
             self.update_model(self.player, cached_playlist,
                               currentTrack)
-            self.view.set_model(self._model)
-            self.songs_count = cached_playlist.iter_n_children(None)
+            self.view.set_model(self.filter)
+            self.songs_count = self._model.iter_n_children(None)
             self._update_songs_count()
         else:
             self._model = Gtk.ListStore(
@@ -939,7 +942,8 @@ class Playlist(ViewContainer):
                 GObject.TYPE_BOOLEAN,
                 GObject.TYPE_BOOLEAN
             )
-            self.view.set_model(self._model)
+            self.filter = self._model.filter_new(None)
+            self.view.set_model(self.filter)
             playlists.parse_playlist(playlist, self._add_item)
             self.songs_count = 0
             self._update_songs_count()
