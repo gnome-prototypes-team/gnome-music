@@ -31,7 +31,7 @@
 
 
 from gi.repository import Gtk, Gdk, Gio, GLib, Tracker
-from gettext import gettext as _
+from gettext import gettext as _, ngettext
 
 from gnomemusic.toolbar import Toolbar, ToolbarState
 from gnomemusic.player import Player, SelectionToolbar
@@ -58,6 +58,12 @@ class Window(Gtk.ApplicationWindow):
         self.connect('focus-in-event', self._windows_focus_cb)
         self.settings = Gio.Settings('org.gnome.Music')
         self.add_action(self.settings.create_action('repeat'))
+        selectAll = Gio.SimpleAction.new('selectAll', None)
+        selectAll.connect('activate', self._on_select_all)
+        self.add_action(selectAll)
+        selectNone = Gio.SimpleAction.new('selectNone', None)
+        selectNone.connect('activate', self._on_select_none)
+        self.add_action(selectNone)
 
         self.set_size_request(887, 640)
 
@@ -179,6 +185,38 @@ class Window(Gtk.ApplicationWindow):
         self.player.eventBox.show_all()
         self._box.show()
         self.show()
+
+    def _on_select_all(self, action, param):
+        if self.toolbar._state != ToolbarState.SINGLE:
+            model = self._stack.get_visible_child()._model
+        else:
+            model = self._stack.get_visible_child()._albumWidget.model
+        _iter = model.get_iter_first()
+        count = 0
+        while _iter is not None:
+            model.set(_iter, [6], [True])
+            _iter = model.iter_next(_iter)
+            count = count + 1
+        if count > 0:
+            self.toolbar._selection_menu_label.set_text(
+                ngettext(_("Selected %d item"), _("Selected %d items"), count) % count)
+            self.selection_toolbar._add_to_playlist_button.set_sensitive(True)
+            self.selection_toolbar._remove_from_playlist_button.set_sensitive(True)
+        elif count == 0:
+            self.toolbar._selection_menu_label.set_text(_("Click on items to select them"))
+
+    def _on_select_none(self, action, param):
+        if self.toolbar._state != ToolbarState.SINGLE:
+            model = self._stack.get_visible_child()._model
+        else:
+            model = self._stack.get_visible_child()._albumWidget.model
+        _iter = model.get_iter_first()
+        self.selection_toolbar._add_to_playlist_button.set_sensitive(False)
+        self.selection_toolbar._remove_from_playlist_button.set_sensitive(False)
+        while _iter is not None:
+            model.set(_iter, [6], [False])
+            _iter = model.iter_next(_iter)
+        self.toolbar._selection_menu_label.set_text(_("Click on items to select them"))
 
     def _on_key_press(self, widget, event):
         modifiers = Gtk.accelerator_get_default_mod_mask()
