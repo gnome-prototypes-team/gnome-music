@@ -664,7 +664,7 @@ class PlaylistDialog():
         self.view.append_column(cols)
 
     def populate(self, items):
-        for playlist_name in items:
+        for playlist_name in sorted(items):
             self.model.append([playlist_name, False])
         add_playlist_iter = self.model.append()
         self.model.set(add_playlist_iter, [0, 1], [_("New Playlist"), True])
