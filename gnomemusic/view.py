@@ -1025,6 +1025,8 @@ class Playlist(ViewContainer):
         for row in model:
             if row[5].get_url() == uri:
                 self._model.remove(row.iter)
+                self.songs_count -= 1
+                self._update_songs_count()
                 return
 
     def populate(self):
