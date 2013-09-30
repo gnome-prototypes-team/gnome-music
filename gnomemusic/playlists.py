@@ -35,8 +35,11 @@ class Playlists(GObject.GObject):
             for _iter in iterlist:
                 pass
         else:
-            _iter = TotemPlParser.PlaylistIter()
-            playlist.append(_iter)
+            if TotemPlParser.PARSER_VERSION_MINOR >= 10:
+                _iter = playlist.append()
+            else:
+                _iter = TotemPlParser.PlaylistIter()
+                playlist.append(_iter)
         parser.save(playlist, pl_file, name, TotemPlParser.ParserType.PLS)
         self.emit('playlist-created', name)
         return False
@@ -58,14 +61,20 @@ class Playlists(GObject.GObject):
         pl_file = Gio.file_new_for_path(self.get_path_to_playlist(playlist_name))
 
         def parse_callback(parser, uri, metadata, data):
-            _iter = TotemPlParser.PlaylistIter()
-            playlist.append(_iter)
+            if TotemPlParser.PARSER_VERSION_MINOR >= 10:
+                _iter = playlist.append()
+            else:
+                _iter = TotemPlParser.PlaylistIter()
+                playlist.append(_iter)
             playlist.set_value(_iter, TotemPlParser.PARSER_FIELD_URI, uri)
 
         def end_callback(parser, uri, data):
             for uri in uris:
-                _iter = TotemPlParser.PlaylistIter()
-                playlist.append(_iter)
+                if TotemPlParser.PARSER_VERSION_MINOR >= 10:
+                    _iter = playlist.append()
+                else:
+                    _iter = TotemPlParser.PlaylistIter()
+                    playlist.append(_iter)
                 playlist.set_value(_iter, TotemPlParser.PARSER_FIELD_URI, uri)
 
                 def get_callback(source, param, item):
@@ -91,8 +100,11 @@ class Playlists(GObject.GObject):
                 uris.remove(uri)
                 self.emit('song-removed-from-playlist', playlist_name, uri)
             else:
-                _iter = TotemPlParser.PlaylistIter()
-                playlist.append(_iter)
+                if TotemPlParser.PARSER_VERSION_MINOR >= 10:
+                    _iter = playlist.append()
+                else:
+                    _iter = TotemPlParser.PlaylistIter()
+                    playlist.append(_iter)
                 playlist.set_value(_iter, TotemPlParser.PARSER_FIELD_URI, uri)
 
         def end_callback(parser, uri, data):
