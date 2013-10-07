@@ -1,5 +1,6 @@
 from gi.repository import Gtk, Gd, GObject, Pango
 
+
 class BaseModelColumns():
     ID = 0
     NAME = 1
@@ -10,9 +11,9 @@ class FilterView():
     def __init__(self, manager):
         self.manager = manager
         self.model = Gtk.ListStore.new([
-            GObject.TYPE_STRING,  #ID
-            GObject.TYPE_STRING,  #NAME
-            GObject.TYPE_STRING,  #TEXT
+            GObject.TYPE_STRING,  # ID
+            GObject.TYPE_STRING,  # NAME
+            GObject.TYPE_STRING,  # TEXT
         ])
         self.view = Gtk.TreeView()
         self.view.set_activate_on_single_click(True)
@@ -26,7 +27,7 @@ class FilterView():
 
         self._rendererHeading = Gtk.CellRendererText(weight=Pango.Weight.BOLD, weight_set=True)
         col.pack_start(self._rendererHeading, False)
-        col.add_attribute(self._rendererHeading, 'text', BaseModelColumns.HEADING_TEXT);
+        col.add_attribute(self._rendererHeading, 'text', BaseModelColumns.HEADING_TEXT)
         col.set_cell_data_func(self._rendererHeading, self._visibilityForHeading, True)
 
         self._rendererRadio = Gtk.CellRendererToggle(radio=True, mode=Gtk.CellRendererMode.INERT)
@@ -35,8 +36,8 @@ class FilterView():
 
         self._rendererText = Gtk.CellRendererText()
         col.pack_start(self._rendererText, True)
-        col.add_attribute(self._rendererText, 'text', BaseModelColumns.NAME);
-        col.set_cell_data_func(self._rendererText, self._visibilityForHeading, True);
+        col.add_attribute(self._rendererText, 'text', BaseModelColumns.NAME)
+        col.set_cell_data_func(self._rendererText, self._visibilityForHeading, True)
 
         self.view.show()
 
@@ -49,7 +50,6 @@ class FilterView():
         cell.set_active(self.manager.get_active() == id)
 
     def _visibilityForHeading(self, col, cell, model, _iter, additional_arguments):
-        heading = model.get_value(_iter, BaseModelColumns.HEADING_TEXT)
         additionalFunc = None
         visible = additional_arguments
         if isinstance(additional_arguments, list):
@@ -116,7 +116,6 @@ class BaseManager:
 
     def set_active(self, id):
         self.id = id
-
 
 
 class Searchbar(Gd.Revealer):
