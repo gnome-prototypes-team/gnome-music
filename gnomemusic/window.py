@@ -134,6 +134,7 @@ class Window(Gtk.ApplicationWindow):
             self._box.pack_start(self.toolbar.header_bar, False, False, 0)
             self.set_hide_titlebar_when_maximized(True)
         self._box.pack_start(self.toolbar.searchbar, False, False, 0)
+        self._box.pack_start(self.toolbar.dropdown, False, False, 0)
         self._box.pack_start(self._stack, True, True, 0)
         self._box.pack_start(self.player.eventBox, False, False, 0)
         self._box.pack_start(self.selection_toolbar.eventbox, False, False, 0)
@@ -153,6 +154,7 @@ class Window(Gtk.ApplicationWindow):
 
             self.toolbar.set_stack(self._stack)
             self.toolbar.searchbar.show()
+            self.toolbar.dropdown.show()
 
             self._on_notify_model_id = self._stack.connect('notify::visible-child', self._on_notify_mode)
             self.connect('destroy', self._notify_mode_disconnect)
