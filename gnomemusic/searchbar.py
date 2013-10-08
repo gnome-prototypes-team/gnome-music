@@ -64,22 +64,10 @@ class FilterView():
 
 
 class DropDown(Gd.Revealer):
-    searchbar = None
-
     def __init__(self):
         Gd.Revealer.__init__(self, halign=Gtk.Align.CENTER, valign=Gtk.Align.START)
 
         self._grid = Gtk.Grid(orientation=Gtk.Orientation.HORIZONTAL)
-
-        sourcesManager = BaseManager('source', "Sources")
-        sourcesFilter = FilterView(sourcesManager, self)
-        self._grid.add(sourcesFilter.view)
-
-        searchFieldsManager = BaseManager('search', "Search By")
-        searchFieldsFilter = FilterView(searchFieldsManager, self)
-        self._grid.add(searchFieldsFilter.view)
-
-        self._grid.show_all()
 
         frame = Gtk.Frame(shadow_type=Gtk.ShadowType.IN, opacity=0.9)
         frame.get_style_context().add_class('documents-dropdown')
@@ -88,16 +76,29 @@ class DropDown(Gd.Revealer):
 
         self.add(frame)
 
+    def initialize_filters(self, searchbar):
+        sourcesManager = BaseManager('source', "Sources", searchbar._search_entry)
+        sourcesFilter = FilterView(sourcesManager, self)
+        self._grid.add(sourcesFilter.view)
+
+        searchFieldsManager = BaseManager('search', "Search By", searchbar._search_entry)
+        searchFieldsFilter = FilterView(searchFieldsManager, self)
+        self._grid.add(searchFieldsFilter.view)
+
+        self._grid.show_all()
+
     def do_select(self, manager, id):
         manager.set_active(id)
-        self.searchbar._search_entry.add_tag(manager.tag)
+
 
 class BaseManager:
 
-    def __init__(self, id, label):
+    def __init__(self, id, label, entry):
         self.id = id
         self.label = label
+        self.entry = entry
         self.tag = Gd.TaggedEntryTag()
+        self.tag.manager =  self
 
     def fill_in_values(self, model):
         self.values = []
@@ -128,7 +129,17 @@ class BaseManager:
         if selected_value != []:
             selected_value = selected_value[0]
             self.selected_id = selected_value[BaseModelColumns.ID]
-            self.tag.set_label(selected_value[BaseModelColumns.NAME])
+
+            # If selected values has non-empty HEADING_TEXT then it is a default value
+            # No need to set the tag there
+            if selected_value[BaseModelColumns.HEADING_TEXT] == "":
+                self.entry.add_tag(self.tag)
+                self.tag.set_label(selected_value[BaseModelColumns.NAME])
+            else:
+                self.entry.remove_tag(self.tag)
+
+    def reset_to_default(self):
+        self.set_active(self.values[0][BaseModelColumns.ID])
 
 
 class Searchbar(Gd.Revealer):
@@ -137,7 +148,6 @@ class Searchbar(Gd.Revealer):
         Gd.Revealer.__init__(self)
         self.stack_switcher = stack_switcher
         self.dropdown = dropdown
-        self.dropdown.searchbar = self
         self._searchContainer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, halign=Gtk.Align.CENTER)
         self._searchContainer.get_style_context().add_class('linked')
 
@@ -156,7 +166,6 @@ class Searchbar(Gd.Revealer):
         self._dropDownButton.show_all()
         self._searchContainer.add(self._dropDownButton)
 
-        self._search_entry.connect("tag-clicked", self._search_entry_tag_clicked)
         self._search_entry.connect("tag-button-clicked", self._search_entry_tag_button_clicked)
 
         self._searchContainer.show_all()
@@ -175,11 +184,8 @@ class Searchbar(Gd.Revealer):
     def _drop_down_button_toggled(self, *args):
         self.dropdown.set_reveal_child(self._dropDownButton.get_active())
 
-    def _search_entry_tag_clicked(self, *args):
-        print("search_entry_tag_clicked")
-
-    def _search_entry_tag_button_clicked(self, *args):
-        print("search_entry_tag_button_clicked")
+    def _search_entry_tag_button_clicked(self, entry, tag):
+        tag.manager.reset_to_default()
 
     def set_view_filter(self, model, itr, user_data):
         if self._search_entry.get_property("visible"):
