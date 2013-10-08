@@ -51,21 +51,21 @@ class Grilo(GObject.GObject):
     def __init__(self):
         GObject.GObject.__init__(self)
 
+        self.sources = {}
+        self.tracker = None
+
         self.options = Grl.OperationOptions()
         self.options.set_flags(Grl.ResolutionFlags.FULL |
                                Grl.ResolutionFlags.IDLE_RELAY)
 
         self.registry = Grl.Registry.get_default()
+        self.registry.connect('source_added', self._on_source_added)
+        self.registry.connect('source_removed', self._on_source_removed)
         try:
             self.registry.load_all_plugins()
         except GLib.GError:
             print('Failed to load plugins.')
 
-        self.sources = {}
-        self.tracker = None
-
-        self.registry.connect('source_added', self._on_source_added)
-        self.registry.connect('source_removed', self._on_source_removed)
 
     def _on_source_added(self, pluginRegistry, mediaSource):
         id = mediaSource.get_id()
@@ -77,9 +77,14 @@ class Grilo(GObject.GObject):
 
                 self.sources[id] = mediaSource
                 self.tracker = mediaSource
+                self.search_source = mediaSource
 
                 if self.tracker is not None:
                     self.emit('ready')
+        elif (mediaSource.supported_operations() & Grl.SupportedOps.SEARCH)\
+         and (mediaSource.get_supported_media() & Grl.MediaType.AUDIO):
+            self.sources[id] = mediaSource
+
 
     def _on_source_removed(self, pluginRegistry, mediaSource):
         print('source removed')
@@ -106,20 +111,19 @@ class Grilo(GObject.GObject):
             callback(source, param, item)
         self.tracker.query(query, self.METADATA_KEYS, options, _callback, None)
 
-    def _search_callback(self):
-        print('yeah')
-
-    def search(self, q):
-        options = self.options.copy()
-        for source in self.sources:
-            print(source.get_name() + ' - ' + q)
-            source.search(q, [Grl.METADATA_KEY_ID], 0, 10,
-                          options, self._search_callback, source)
-
     def get_album_art_for_album_id(self, album_id, _callback):
         options = self.options.copy()
         query = Query.get_album_for_id(album_id)
         self.tracker.query(query, self.METADATA_THUMBNAIL_KEYS, options, _callback, None)
+
+    def search(self, q, callback):
+        options = self.options.copy()
+
+        def _search_callback(src, param, item, id, offset, data):
+            if item is not None:
+                #print("%s: %s by %s" % (item.get_url(), item.get_title(), item.get_author()))
+                callback(src, param, item)
+        self.search_source.search(q, [Grl.METADATA_KEY_ID], options, _search_callback, None)
 
 Grl.init(None)
 
