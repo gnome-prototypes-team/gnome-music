@@ -42,7 +42,7 @@ from gnomemusic import log
 import logging
 logger = logging.getLogger(__name__)
 
-playlist = Playlists.get_default()
+playlists = Playlists.get_default()
 
 try:
     tracker = Tracker.SparqlConnection.get(None)
@@ -641,7 +641,7 @@ class PlaylistDialog():
         self._cancel_button.connect('clicked', self._on_cancel_button_clicked)
         self._select_button.connect('clicked', self._on_selection)
 
-        playlist.connect('playlist-created', self._on_playlist_created)
+        playlists.connect('playlist-created', self._on_playlist_created)
 
     @log
     def get_selected(self):
@@ -723,7 +723,7 @@ class PlaylistDialog():
     @log
     def _on_editing_done(self, editable, data=None):
         if editable.get_text() != '':
-            playlist.create_playlist(editable.get_text())
+            playlists.create_playlist(editable.get_text())
 
     @log
     def _on_playlist_created(self, playlists, item):
