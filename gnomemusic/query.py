@@ -1167,3 +1167,146 @@ class Query():
             '''.replace('\n', ' ').strip() % {'name': name}
 
         return Query.songs(query)
+
+    @staticmethod
+    def get_playlists_with_any_match(name):
+        name = Tracker.sparql_escape_string(GLib.utf8_casefold(name, -1))
+        query = '''
+            {
+                SELECT DISTINCT
+                    ?playlist
+                WHERE {
+                    ?song
+                        a nmm:MusicPiece ;
+                        a nfo:FileDataObject ;
+                        nie:url ?url .
+                    ?entry
+                        a nfo:MediaFileListEntry ;
+                        nfo:entryUrl ?url .
+                    ?playlist
+                        a nmm:Playlist ;
+                        a nfo:MediaList ;
+                        nfo:hasMediaFileListEntry ?entry .
+                    FILTER (
+                        fn:contains(tracker:case-fold(nie:title(?song)), "%(name)s") ||
+                        fn:contains(tracker:case-fold(nmm:artistName(nmm:performer(?song))), "%(name)s") ||
+                        fn:contains(tracker:case-fold(nie:title(nmm:musicAlbum(?song))), "%(name)s") ||
+                        fn:contains(tracker:case-fold(nie:title(?playlist)), "%(name)s")
+                    )
+                }
+            }
+            '''.replace('\n', ' ').strip() % {'name': name}
+
+        return Query.playlists(query)
+
+    @staticmethod
+    def get_playlists_with_artist_match(name):
+        name = Tracker.sparql_escape_string(GLib.utf8_casefold(name, -1))
+        query = '''
+            {
+                SELECT DISTINCT
+                    ?playlist
+                WHERE {
+                    ?song
+                        a nmm:MusicPiece ;
+                        a nfo:FileDataObject ;
+                        nie:url ?url .
+                    ?entry
+                        a nfo:MediaFileListEntry ;
+                        nfo:entryUrl ?url .
+                    ?playlist
+                        a nmm:Playlist ;
+                        a nfo:MediaList ;
+                        nfo:hasMediaFileListEntry ?entry .
+                    FILTER (
+                        fn:contains(tracker:case-fold(nmm:artistName(nmm:performer(?song))), "%(name)s")
+                    )
+                }
+            }
+            '''.replace('\n', ' ').strip() % {'name': name}
+
+        return Query.playlists(query)
+
+    @staticmethod
+    def get_playlists_with_album_match(name):
+        name = Tracker.sparql_escape_string(GLib.utf8_casefold(name, -1))
+        query = '''
+            {
+                SELECT DISTINCT
+                    ?playlist
+                WHERE {
+                    ?song
+                        a nmm:MusicPiece ;
+                        a nfo:FileDataObject ;
+                        nie:url ?url .
+                    ?entry
+                        a nfo:MediaFileListEntry ;
+                        nfo:entryUrl ?url .
+                    ?playlist
+                        a nmm:Playlist ;
+                        a nfo:MediaList ;
+                        nfo:hasMediaFileListEntry ?entry .
+                    FILTER (
+                        fn:contains(tracker:case-fold(nie:title(nmm:musicAlbum(?song))), "%(name)s")
+                    )
+                }
+            }
+            '''.replace('\n', ' ').strip() % {'name': name}
+
+        return Query.playlists(query)
+
+    @staticmethod
+    def get_playlists_with_track_match(name):
+        name = Tracker.sparql_escape_string(GLib.utf8_casefold(name, -1))
+        query = '''
+            {
+                SELECT DISTINCT
+                    ?playlist
+                WHERE {
+                    ?song
+                        a nmm:MusicPiece ;
+                        a nfo:FileDataObject ;
+                        nie:url ?url .
+                    ?entry
+                        a nfo:MediaFileListEntry ;
+                        nfo:entryUrl ?url .
+                    ?playlist
+                        a nmm:Playlist ;
+                        a nfo:MediaList ;
+                        nfo:hasMediaFileListEntry ?entry .
+                    FILTER (
+                        fn:contains(tracker:case-fold(nie:title(?song)), "%(name)s")
+                    )
+                }
+            }
+            '''.replace('\n', ' ').strip() % {'name': name}
+
+        return Query.playlists(query)
+
+    @staticmethod
+    def get_playlists_with_playlist_match(name):
+        name = Tracker.sparql_escape_string(GLib.utf8_casefold(name, -1))
+        query = '''
+            {
+                SELECT DISTINCT
+                    ?playlist
+                WHERE {
+                    ?song
+                        a nmm:MusicPiece ;
+                        a nfo:FileDataObject ;
+                        nie:url ?url .
+                    ?entry
+                        a nfo:MediaFileListEntry ;
+                        nfo:entryUrl ?url .
+                    ?playlist
+                        a nmm:Playlist ;
+                        a nfo:MediaList ;
+                        nfo:hasMediaFileListEntry ?entry .
+                    FILTER (
+                        fn:contains(tracker:case-fold(nie:title(?playlist)), "%(name)s")
+                    )
+                }
+            }
+            '''.replace('\n', ' ').strip() % {'name': name}
+
+        return Query.playlists(query)
