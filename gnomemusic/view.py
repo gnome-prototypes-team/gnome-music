@@ -68,7 +68,7 @@ class ViewContainer(Gtk.Stack):
     starIconName = 'starred-symbolic'
 
     @log
-    def __init__(self, name, title, window, view_type, use_sidebar=False, sidebar=None):
+    def __init__(self, name, title, window, view_type, use_sidebar=False):
         Gtk.Stack.__init__(self,
                            transition_type=Gtk.StackTransitionType.CROSSFADE)
         self._grid = Gtk.Grid(orientation=Gtk.Orientation.HORIZONTAL)
@@ -106,13 +106,10 @@ class ViewContainer(Gtk.Stack):
             )
             dummy = Gtk.Frame(visible=False)
             self.stack.add_named(dummy, 'dummy')
-            if sidebar:
-                self.stack.add_named(sidebar, 'sidebar')
-            else:
-                self.stack.add_named(box, 'sidebar')
+            self.stack.add_named(box, 'sidebar')
             self.stack.set_visible_child_name('dummy')
             self._grid.add(self.stack)
-        if not use_sidebar or sidebar:
+        else:
             self._grid.add(box)
 
         self.view.connect('item-activated', self._on_item_activated)
@@ -787,175 +784,55 @@ class Playlist(ViewContainer):
 
     @log
     def __init__(self, window, player):
-        self.playlists_sidebar = Gd.MainView(
-            shadow_type=Gtk.ShadowType.NONE
-        )
-
         ViewContainer.__init__(self, 'playlists', _("Playlists"), window,
-                               Gd.MainViewType.LIST, True, self.playlists_sidebar)
+                               Gd.MainViewType.LIST, True)
 
-        self.view.get_generic_view().get_style_context()\
-            .add_class('songs-list')
+        self.view.set_view_type(Gd.MainViewType.LIST)
+        self.view.set_hexpand(False)
+        self.view.get_style_context().add_class('artist-panel')
+        self.view.get_generic_view().get_selection().set_mode(
+            Gtk.SelectionMode.SINGLE)
         self._add_list_renderers()
 
-        builder = Gtk.Builder()
-        builder.add_from_resource('/org/gnome/Music/PlaylistControls.ui')
-        self.headerbar = builder.get_object('grid')
-        self.name_label = builder.get_object('playlist_name')
-        self.songs_count_label = builder.get_object('songs_count')
-        self.menubutton = builder.get_object('playlist_menubutton')
-        self.play_menuitem = builder.get_object('menuitem_play')
-        self.play_menuitem.connect('activate', self._on_play_activate)
-        self.delete_menuitem = builder.get_object('menuitem_delete')
-        self.delete_menuitem.connect('activate', self._on_delete_activate)
-        self._grid.insert_row(0)
-        self._grid.attach(self.headerbar, 1, 0, 1, 1)
-
-        self.playlists_model = Gtk.ListStore(
-            GObject.TYPE_STRING,
-            GObject.TYPE_STRING,
-            GObject.TYPE_STRING,
-            GObject.TYPE_STRING,
-            GdkPixbuf.Pixbuf,
-            GObject.TYPE_OBJECT,
-            GObject.TYPE_BOOLEAN,
-            GObject.TYPE_INT,
-            GObject.TYPE_STRING,
-            GObject.TYPE_BOOLEAN,
-            GObject.TYPE_BOOLEAN
+        self._playlistWidget = Widgets.PlaylistWidget(
+            player, self.header_bar, self.selection_toolbar
         )
-        self.playlists_sidebar.set_view_type(Gd.MainViewType.LIST)
-        self.playlists_sidebar.set_model(self.playlists_model)
-        self.playlists_sidebar.set_hexpand(False)
-        self.playlists_sidebar.get_style_context().add_class('artist-panel')
-        self.playlists_sidebar.get_generic_view().get_selection().set_mode(
-            Gtk.SelectionMode.SINGLE)
-        self.playlists_sidebar.connect('item-activated', self._on_playlist_activated)
-        self._grid.insert_column(0)
-        self._grid.child_set_property(self.stack, 'top-attach', 0)
-        self._grid.child_set_property(self.stack, 'height', 2)
-        self._add_sidebar_renderers()
+        self._grid.attach(self._playlistWidget, 2, 0, 2, 2)
+
         if (Gtk.Settings.get_default().get_property(
                 'gtk_application_prefer_dark_theme')):
-            self.playlists_sidebar.get_generic_view().get_style_context().\
+            self.view.get_generic_view().get_style_context().\
                 add_class("artist-panel-dark")
         else:
-            self.playlists_sidebar.get_generic_view().get_style_context().\
+            self.view.get_generic_view().get_style_context().\
                 add_class("artist-panel-white")
 
-        self.iter_to_clean = None
-        self.iter_to_clean_model = None
-        self.current_playlist = None
-        self.songs_count = 0
-        self._update_songs_count()
         self.player = player
-        self.player.connect('playlist-item-changed', self.update_model)
+        self.playlist = None
+
         playlists.connect('playlist-created', self._on_playlist_created)
-        playlists.connect('song-added-to-playlist', self._on_song_added_to_playlist)
-        playlists.connect('song-removed-from-playlist', self._on_song_removed_from_playlist)
+        playlists.connect('playlist-deleted', self._on_playlist_deleted)
+
         self.show_all()
 
     @log
     def _add_list_renderers(self):
         list_widget = self.view.get_generic_view()
-        cols = list_widget.get_columns()
-        cells = cols[0].get_cells()
-        cells[2].set_visible(False)
-        now_playing_symbol_renderer = Gtk.CellRendererPixbuf(xalign=1.0)
-
-        column_now_playing = Gtk.TreeViewColumn()
-        column_now_playing.set_property('fixed_width', 24)
-        column_now_playing.pack_start(now_playing_symbol_renderer, False)
-        column_now_playing.add_attribute(now_playing_symbol_renderer,
-                                         'visible', 10)
-        column_now_playing.add_attribute(now_playing_symbol_renderer,
-                                         'icon_name', 8)
-        list_widget.insert_column(column_now_playing, 0)
-
-        title_renderer = Gtk.CellRendererText(
-            xpad=0,
-            xalign=0.0,
-            yalign=0.5,
-            height=48,
-            ellipsize=Pango.EllipsizeMode.END
-        )
-        list_widget.add_renderer(title_renderer,
-                                 self._on_list_widget_title_render, None)
-        cols[0].add_attribute(title_renderer, 'text', 2)
-
-        star_renderer = Gtk.CellRendererPixbuf(
-            xpad=32,
-            icon_name=self.starIconName
-        )
-        list_widget.add_renderer(star_renderer,
-                                 self._on_list_widget_star_render, None)
-        cols[0].add_attribute(star_renderer, 'visible', 9)
-
-        duration_renderer = Gd.StyledTextRenderer(
-            xpad=32,
-            xalign=1.0
-        )
-        duration_renderer.add_class('dim-label')
-        list_widget.add_renderer(duration_renderer,
-                                 self._on_list_widget_duration_render, None)
-
-        artist_renderer = Gd.StyledTextRenderer(
-            xpad=32,
-            ellipsize=Pango.EllipsizeMode.END
-        )
-        artist_renderer.add_class('dim-label')
-        list_widget.add_renderer(artist_renderer,
-                                 self._on_list_widget_artist_render, None)
-        cols[0].add_attribute(artist_renderer, 'text', 3)
-
-        type_renderer = Gd.StyledTextRenderer(
-            xpad=32,
-            ellipsize=Pango.EllipsizeMode.END
-        )
-        type_renderer.add_class('dim-label')
-        list_widget.add_renderer(type_renderer,
-                                 self._on_list_widget_type_render, None)
-
-    @log
-    def _add_sidebar_renderers(self):
-        list_widget = self.playlists_sidebar.get_generic_view()
 
         cols = list_widget.get_columns()
         cells = cols[0].get_cells()
         cells[1].set_visible(False)
         cells[2].set_visible(False)
-        type_renderer = Gd.StyledTextRenderer(
+        nameRenderer = Gd.StyledTextRenderer(
             xpad=16,
             ypad=16,
             ellipsize=Pango.EllipsizeMode.END,
             xalign=0.0,
             width=220
         )
-        list_widget.add_renderer(type_renderer, lambda *args: None, None)
-        cols[0].clear_attributes(type_renderer)
-        cols[0].add_attribute(type_renderer, "text", 2)
-
-    def _on_list_widget_title_render(self, col, cell, model, _iter, data):
-        pass
-
-    def _on_list_widget_star_render(self, col, cell, model, _iter, data):
-        pass
-
-    def _on_list_widget_duration_render(self, col, cell, model, _iter, data):
-        item = model.get_value(_iter, 5)
-        if item:
-            seconds = item.get_duration()
-            minutes = seconds // 60
-            seconds %= 60
-            cell.set_property('text', '%i:%02i' % (minutes, seconds))
-
-    def _on_list_widget_artist_render(self, col, cell, model, _iter, data):
-        pass
-
-    def _on_list_widget_type_render(self, coll, cell, model, _iter, data):
-        item = model.get_value(_iter, 5)
-        if item:
-            cell.set_property('text', item.get_string(Grl.METADATA_KEY_ALBUM) or _("Unknown Album"))
+        list_widget.add_renderer(nameRenderer, lambda *args: None, None)
+        cols[0].clear_attributes(nameRenderer)
+        cols[0].add_attribute(nameRenderer, "text", 2)
 
     @log
     def _populate(self):
@@ -963,231 +840,91 @@ class Playlist(ViewContainer):
         self.populate()
 
     @log
-    def update_model(self, player, playlist, currentIter):
-        if self.iter_to_clean:
-            self.iter_to_clean_model.set_value(self.iter_to_clean, 10, False)
-        if playlist != self._model:
-            return False
-
-        self._model.set_value(currentIter, 10, True)
-        if self._model.get_value(currentIter, 8) != self.errorIconName:
-            self.iter_to_clean = currentIter.copy()
-            self.iter_to_clean_model = self._model
-        return False
-
-    @log
-    def _add_playlist_item(self, source, param, item, remaining=0, data=None):
-        self._add_playlist_item_to_model(item)
-
-    @log
-    def _add_playlist_item_to_model(self, item):
-        if not item:
-            return
-        _iter = self.playlists_model.insert_with_valuesv(
-            -1,
-            [2, 5],
-            [albumArtCache.get_media_title(item), item])
-        if self.playlists_model.iter_n_children(None) == 1:
-            _iter = self.playlists_model.get_iter_first()
-            selection = self.playlists_sidebar.get_generic_view().get_selection()
-            selection.select_iter(_iter)
-            self.playlists_sidebar.emit('item-activated', '0',
-                                        self.playlists_model.get_path(_iter))
-
-    @log
-    def _on_item_activated(self, widget, id, path):
-        _iter = self._model.get_iter(path)
-        if self._model.get_value(_iter, 8) != self.errorIconName:
-            self.player.set_playlist(
-                'Playlist', self.current_playlist.get_id(),
-                self._model, _iter, 5
-            )
-            self.player.set_playing(True)
-
-    @log
-    def _on_playlist_activated(self, widget, item_id, path):
-        _iter = self.playlists_model.get_iter(path)
-        playlist_name = self.playlists_model.get_value(_iter, 2)
-        playlist = self.playlists_model.get_value(_iter, 5)
-
-        if self.current_playlist == playlist:
-            return
-
-        self.current_playlist = playlist
-        self.name_label.set_text(playlist_name)
-
-        # if the active queue has been set by this playlist,
-        # use it as model, otherwise build the liststore
-        cached_playlist = self.player.running_playlist('Playlist', playlist_name)
-        if cached_playlist:
-            self._model = cached_playlist
-            currentTrack = self.player.playlist.get_iter(self.player.currentTrack.get_path())
-            self.update_model(self.player, cached_playlist,
-                              currentTrack)
-            self.view.set_model(self._model)
-            self.songs_count = self._model.iter_n_children(None)
-            self._update_songs_count()
-        else:
-            self._model = Gtk.ListStore(
-                GObject.TYPE_STRING,
-                GObject.TYPE_STRING,
-                GObject.TYPE_STRING,
-                GObject.TYPE_STRING,
-                GdkPixbuf.Pixbuf,
-                GObject.TYPE_OBJECT,
-                GObject.TYPE_BOOLEAN,
-                GObject.TYPE_INT,
-                GObject.TYPE_STRING,
-                GObject.TYPE_BOOLEAN,
-                GObject.TYPE_BOOLEAN
-            )
-            self.view.set_model(self._model)
-            GLib.idle_add(grilo.populate_playlist_songs, playlist, self._add_item)
-            self.songs_count = 0
-            self._update_songs_count()
-
-    @log
-    def _add_item(self, source, param, item, remaining=0, data=None):
-        self._add_item_to_model(item, self._model)
-
-    @log
-    def _add_item_to_model(self, item, model):
-        if not item:
-            return
-        self._offset += 1
-        title = albumArtCache.get_media_title(item)
-        item.set_title(title)
-        artist = item.get_string(Grl.METADATA_KEY_ARTIST)\
-            or item.get_author()\
-            or _("Unknown Artist")
-        _iter = model.insert_with_valuesv(
-            -1,
-            [2, 3, 5, 8, 9, 10],
-            [title, artist, item, self.nowPlayingIconName, False, False])
-        self.player.discover_item(item, self._on_discovered, _iter)
-        self.songs_count += 1
-        self._update_songs_count()
-
-    @log
-    def _update_songs_count(self):
-        self.songs_count_label.set_text(
-            ngettext("%d Song", "%d Songs", self.songs_count)
-            % self.songs_count)
-
-    @log
-    def _on_selection_mode_changed(self, widget, data=None):
-        self.playlists_sidebar.set_sensitive(not self.header_bar._selectionMode)
-        self.menubutton.set_sensitive(not self.header_bar._selectionMode)
-
-    @log
-    def _on_play_activate(self, menuitem, data=None):
-        _iter = self._model.get_iter_first()
-        if not _iter:
-            return
-
-        self.view.get_generic_view().get_selection().\
-            select_path(self._model.get_path(_iter))
-        self.view.emit('item-activated', '0',
-                       self._model.get_path(_iter))
-
-    @log
-    def _on_delete_activate(self, menuitem, data=None):
-        self._model.clear()
-        _iter = self.playlists_sidebar.get_generic_view().get_selection().get_selected()[1]
-        if not _iter:
-            return
-
-        iter_next = self.playlists_model.iter_next(_iter)\
-            or self.playlists_model.iter_previous(_iter)
-        if iter_next:
-            selection = self.playlists_sidebar.get_generic_view().get_selection()
-            selection.select_iter(iter_next)
-            self.playlists_sidebar.emit('item-activated', '0',
-                                        self.playlists_model.get_path(iter_next))
-
-        playlist = self.playlists_model.get_value(_iter, 5)
-        playlists.delete_playlist(playlist)
-        self.playlists_model.remove(_iter)
-
-    @log
-    def _on_playlist_created(self, playlists, item):
-        self._add_playlist_item_to_model(item)
-        if self.playlists_model.iter_n_children(None) == 1:
-            _iter = self.playlists_model.get_iter_first()
-            selection = self.playlists_sidebar.get_generic_view().get_selection()
-            selection.select_iter(_iter)
-            self.playlists_sidebar.emit('item-activated', '0',
-                                        self.playlists_model.get_path(_iter))
-
-    @log
-    def _on_song_added_to_playlist(self, playlists, playlist, item):
-        if self.current_playlist and \
-           playlist.get_id() == self.current_playlist.get_id():
-            self._add_item_to_model(item, self._model)
-        else:
-            cached_playlist = self.player.running_playlist(
-                'Playlist', playlist.get_id()
-            )
-            if cached_playlist and cached_playlist != self._model:
-                self._add_item_to_model(item, cached_playlist)
-
-    @log
-    def _on_song_removed_from_playlist(self, playlists, playlist, item):
-        cached_playlist = self.player.running_playlist(
-            'Playlist', playlist.get_id()
-        )
-        if self.current_playlist and \
-           playlist.get_id() == self.current_playlist.get_id():
-            model = self._model
-        elif cached_playlist and cached_playlist != self._model:
-            model = cached_playlist
-        else:
-            return
-
-        update_playing_track = False
-        for row in model:
-            if row[5].get_id() == item.get_id():
-                # Is the removed track now being played?
-                if self.current_playlist and \
-                   playlist.get_id() == self.current_playlist.get_id() and \
-                   cached_playlist == model:
-                    if self.player.currentTrack is not None:
-                        currentTrackpath = self.player.currentTrack.get_path().to_string()
-                        if row.path is not None and row.path.to_string() == currentTrackpath:
-                            update_playing_track = True
-
-                nextIter = model.iter_next(row.iter)
-                model.remove(row.iter)
-
-                # Reload the model and switch to next song
-                if update_playing_track:
-                    if nextIter is None:
-                        # Get first track if next track is not valid
-                        nextIter = model.get_iter_first()
-                        if nextIter is None:
-                            # Last track was removed
-                            return
-
-                    self.iter_to_clean = None
-                    self.update_model(self.player, model, nextIter)
-                    self.player.set_playlist('Playlist', playlist.get_id(), model, nextIter, 5)
-                    self.player.set_playing(True)
-
-                # Update songs count
-                self.songs_count -= 1
-                self._update_songs_count()
-                return
-
-    @log
     def populate(self):
         if grilo.tracker:
             GLib.idle_add(grilo.populate_playlists, self._offset,
-                          self._add_playlist_item)
+                          self._add_item)
+
+    @log
+    def _add_item(self, source, param, item, remaining=0, data=None):
+        self._add_item_to_model(item)
+
+    @log
+    def _add_item_to_model(self, item):
+        if not item:
+            return
+        _iter = self._model.insert_with_valuesv(
+            -1,
+            [2, 5],
+            [albumArtCache.get_media_title(item), item])
+        if self._model.iter_n_children(None) == 1:
+            _iter = self._model.get_iter_first()
+            selection = self.view.get_generic_view().get_selection()
+            selection.select_iter(_iter)
+            self.view.emit('item-activated', '0',
+                           self._model.get_path(_iter))
+
+    @log
+    def _on_item_activated(self, widget, item_id, path):
+        _iter = self._model.get_iter(path)
+        self.playlist = self._model.get_value(_iter, 5)
+        self._playlistWidget.update(self.playlist)
+
+    @log
+    def _on_selection_mode_changed(self, widget, data=None):
+        self.view.set_sensitive(not self.header_bar._selectionMode)
+        self._playlistWidget.set_selection_mode(self.header_bar._selectionMode)
+
+    @log
+    def _on_selection_mode_request(self, *args):
+        pass
+
+    @log
+    def _on_view_selection_changed(self, widget):
+        self._playlistWidget._on_view_selection_changed(widget)
+
+    @log
+    def _on_header_bar_toggled(self, button):
+        pass
+
+    @log
+    def _on_cancel_button_clicked(self, button):
+        pass
+
+    @log
+    def _on_playlist_created(self, playlists, item):
+        self._add_item_to_model(item)
+        if self._model.iter_n_children(None) == 1:
+            _iter = self._model.get_iter_first()
+            selection = self.view.get_generic_view().get_selection()
+            selection.select_iter(_iter)
+            self.view.emit('item-activated', '0',
+                           self._model.get_path(_iter))
+
+    @log
+    def _on_playlist_deleted(self, playlists, item):
+        _iter = None
+        for row in self._model:
+            if row[5].get_id() == item.get_id():
+                _iter = row.iter
+                break
+
+        if not _iter:
+            return
+
+        iter_next = self._model.iter_next(_iter)\
+            or self._model.iter_previous(_iter)
+        if iter_next:
+            selection = self.view.get_generic_view().get_selection()
+            selection.select_iter(iter_next)
+            self.view.emit('item-activated', '0',
+                           self._model.get_path(iter_next))
+
+        self._model.remove(_iter)
 
     @log
     def get_selected_tracks(self, callback):
-        callback([self._model.get_value(self._model.get_iter(path), 5)
-                  for path in self.view.get_selection()])
+        self._playlistWidget.get_selected_tracks(callback)
 
 
 class Search(ViewContainer):
