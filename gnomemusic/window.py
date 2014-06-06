@@ -44,7 +44,7 @@ from gnomemusic import log
 import logging
 logger = logging.getLogger(__name__)
 
-playlist = Playlists.get_default()
+playlists = Playlists.get_default()
 try:
     tracker = Tracker.SparqlConnection.get(None)
 except Exception as e:
@@ -379,7 +379,10 @@ class Window(Gtk.ApplicationWindow):
         if self.toolbar._selectionMode is False:
             self._on_changes_pending()
         else:
-            in_playlist = self._stack.get_visible_child() == self.views[3]
+            view = self._stack.get_visible_child()
+            in_playlist = view == self.views[3] or \
+                (view == self.views[4] and
+                 view.get_visible_child() == view._playlistWidget)
             self.selection_toolbar._add_to_playlist_button.set_visible(not in_playlist)
             self.selection_toolbar._remove_from_playlist_button.set_visible(in_playlist)
 
@@ -394,7 +397,7 @@ class Window(Gtk.ApplicationWindow):
 
             add_to_playlist = Widgets.PlaylistDialog(self)
             if add_to_playlist.dialog_box.run() == Gtk.ResponseType.ACCEPT:
-                playlist.add_to_playlist(
+                playlists.add_to_playlist(
                     add_to_playlist.get_selected(),
                     selected_tracks)
             self.toolbar.set_selection_mode(False)
@@ -404,16 +407,20 @@ class Window(Gtk.ApplicationWindow):
 
     @log
     def _on_remove_from_playlist_button_clicked(self, widget):
-        if self._stack.get_visible_child() != self.views[3]:
+        view = self._stack.get_visible_child()
+        if view == self.views[3]:
+            playlist = view.playlist
+        elif view == self.views[4] and \
+                view.get_visible_child() == view._playlistWidget:
+            playlist = view._playlistWidget.playlist
+        else:
             return
 
         def callback(selected_tracks):
             if len(selected_tracks) < 1:
                 return
 
-            playlist.remove_from_playlist(
-                self.views[3].playlist,
-                selected_tracks)
+            playlists.remove_from_playlist(playlist, selected_tracks)
             self.toolbar.set_selection_mode(False)
 
         self._stack.get_visible_child().get_selected_tracks(callback)
