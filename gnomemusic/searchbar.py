@@ -31,6 +31,7 @@ class BaseManager:
                 ['search_artist', _("Artist"), ''],
                 ['search_album', _("Album"), ''],
                 ['search_track', _("Track Title"), ''],
+                ['search_playlist', _("Playlist"), ''],
             ]
         for value in self.values:
             _iter = model.append()
