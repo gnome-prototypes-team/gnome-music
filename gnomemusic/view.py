@@ -965,6 +965,8 @@ class Search(ViewContainer):
         self.items_selected = []
         self.items_selected_callback = None
 
+        playlists.connect('playlist-deleted', self._on_playlist_deleted)
+
         self.show_all()
 
     @log
@@ -1030,6 +1032,12 @@ class Search(ViewContainer):
             self._artistAlbumsWidget.set_selection_mode(self.header_bar._selectionMode)
         elif self.get_visible_child() == self._playlistWidget:
             self._playlistWidget.set_selection_mode(self.header_bar._selectionMode)
+
+    @log
+    def _on_playlist_deleted(self, playlists, item):
+        if self.get_visible_child() == self._playlistWidget and \
+                self._playlistWidget.playlist.get_id() == item.get_id():
+            self.header_bar._back_button.clicked()
 
     @log
     def _add_search_item(self, source, param, item, remaining=0, data=None):
