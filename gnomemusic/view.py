@@ -955,9 +955,17 @@ class Search(ViewContainer):
         self._artists = {}
         self._artistAlbumsWidget = None
 
+        self.playlist_selected = []
+        self._playlistWidget = Widgets.PlaylistWidget(
+            player, self.header_bar, self.selection_toolbar
+        )
+        self.add(self._playlistWidget)
+
         self.view.get_generic_view().set_show_expanders(False)
         self.items_selected = []
         self.items_selected_callback = None
+
+        self.show_all()
 
     @log
     def _back_button_clicked(self, widget, data=None):
@@ -1001,6 +1009,15 @@ class Search(ViewContainer):
                 child_iter = self.songs_model.convert_child_iter_to_iter(_iter)[1]
                 self.player.set_playlist('Search Results', None, self.songs_model, child_iter, 5)
                 self.player.set_playing(True)
+        elif self._model[_iter][11] == 'playlist':
+            title = self._model.get_value(_iter, 2)
+            item = self._model.get_value(_iter, 5)
+            self._playlistWidget.update(item)
+            self.header_bar.set_state(ToolbarState.SEARCH_VIEW)
+            escaped_title = albumArtCache.get_media_title(item)
+            self.header_bar.header_bar.set_title(escaped_title)
+            self.set_visible_child(self._playlistWidget)
+            self.header_bar.searchbar.show_bar(False)
         else:  # Headers
             if self.view.get_generic_view().row_expanded(path):
                 self.view.get_generic_view().collapse_row(path)
@@ -1054,7 +1071,7 @@ class Search(ViewContainer):
 
         group = 3
         try:
-            group = {'album': 0, 'artist': 1, 'song': 2}[category]
+            group = {'album': 0, 'artist': 1, 'song': 2, 'playlist': 3}[category]
         except:
             pass
 
@@ -1066,7 +1083,7 @@ class Search(ViewContainer):
                 [str(item.get_id()), title, artist,
                  self._symbolicIcon, item, self.nowPlayingIconName,
                  False, False, category])
-        else:
+        elif category == 'artist':
             if not artist.casefold() in self._artists:
                 _iter = self._model.insert_with_values(
                     self.head_iters[group], -1,
@@ -1077,6 +1094,13 @@ class Search(ViewContainer):
                 self._artists[artist.casefold()] = {'iter': _iter, 'albums': []}
 
             self._artists[artist.casefold()]['albums'].append(item)
+        elif category == 'playlist':
+            _iter = self._model.insert_with_values(
+                self.head_iters[group], -1,
+                [0, 2, 4, 5, 8, 9, 10, 11],
+                [str(item.get_id()), title,
+                 self._symbolicIcon, item, self.nowPlayingIconName,
+                 False, False, category])
 
         if _iter:
             albumArtCache.get_default().lookup(
@@ -1242,6 +1266,13 @@ class Search(ViewContainer):
                 'search_track': Query.get_songs_with_track_match,
                 'search_playlist': Query.get_songs_with_playlist_match,
             },
+            'playlist': {
+                'search_all': Query.get_playlists_with_any_match,
+                'search_artist': Query.get_playlists_with_artist_match,
+                'search_album': Query.get_playlists_with_album_match,
+                'search_track': Query.get_playlists_with_track_match,
+                'search_playlist': Query.get_playlists_with_playlist_match,
+            },
         }
 
         self._model = Gtk.TreeStore(
@@ -1279,7 +1310,7 @@ class Search(ViewContainer):
         # Use queries for Tracker
         if not grilo.search_source or \
            grilo.search_source.get_id() == 'grl-tracker-source':
-            for category in ('album', 'artist', 'song'):
+            for category in ('album', 'artist', 'song', 'playlist'):
                 query = query_matcher[category][fields_filter](search_term)
                 grilo.populate_custom_query(query, self._add_item, -1, [self._model, category])
         if not grilo.search_source or \
