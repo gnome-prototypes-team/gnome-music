@@ -271,13 +271,19 @@ class Window(Gtk.ApplicationWindow):
         return count
 
     @log
+    def get_current_view_model(self):
+        if self._stack.get_visible_child() == self.views[3]:
+            return self._stack.get_visible_child()._playlistWidget.model
+        elif self.toolbar._state == ToolbarState.MAIN:
+            return self._stack.get_visible_child()._model
+        else:
+            return self._stack.get_visible_child().get_visible_child().model
+
+    @log
     def _on_select_all(self, action, param):
         if self.toolbar._selectionMode is False:
             return
-        if self.toolbar._state == ToolbarState.MAIN:
-            model = self._stack.get_visible_child()._model
-        else:
-            model = self._stack.get_visible_child().get_visible_child().model
+        model = self.get_current_view_model()
         count = self._set_selection(model, True)
         if count > 0:
             self.toolbar._selection_menu_label.set_text(
@@ -290,10 +296,7 @@ class Window(Gtk.ApplicationWindow):
 
     @log
     def _on_select_none(self, action, param):
-        if self.toolbar._state == ToolbarState.MAIN:
-            model = self._stack.get_visible_child()._model
-        else:
-            model = self._stack.get_visible_child().get_visible_child().model
+        model = self.get_current_view_model()
         self._set_selection(model, False)
         self.selection_toolbar._add_to_playlist_button.set_sensitive(False)
         self.selection_toolbar._remove_from_playlist_button.set_sensitive(False)
@@ -409,7 +412,7 @@ class Window(Gtk.ApplicationWindow):
                 return
 
             playlist.remove_from_playlist(
-                self.views[3].current_playlist,
+                self.views[3].playlist,
                 selected_tracks)
             self.toolbar.set_selection_mode(False)
 
