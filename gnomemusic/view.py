@@ -1226,18 +1226,21 @@ class Search(ViewContainer):
                 'search_artist': Query.get_albums_with_artist_match,
                 'search_album': Query.get_albums_with_album_match,
                 'search_track': Query.get_albums_with_track_match,
+                'search_playlist': Query.get_albums_with_playlist_match,
             },
             'artist': {
                 'search_all': Query.get_artists_with_any_match,
                 'search_artist': Query.get_artists_with_artist_match,
                 'search_album': Query.get_artists_with_album_match,
                 'search_track': Query.get_artists_with_track_match,
+                'search_playlist': Query.get_artists_with_playlist_match,
             },
             'song': {
                 'search_all': Query.get_songs_with_any_match,
                 'search_artist': Query.get_songs_with_artist_match,
                 'search_album': Query.get_songs_with_album_match,
                 'search_track': Query.get_songs_with_track_match,
+                'search_playlist': Query.get_songs_with_playlist_match,
             },
         }
 
