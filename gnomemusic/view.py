@@ -1028,6 +1028,8 @@ class Search(ViewContainer):
     def _on_selection_mode_changed(self, widget, data=None):
         if self._artistAlbumsWidget is not None and self.get_visible_child() == self._artistAlbumsWidget:
             self._artistAlbumsWidget.set_selection_mode(self.header_bar._selectionMode)
+        elif self.get_visible_child() == self._playlistWidget:
+            self._playlistWidget.set_selection_mode(self.header_bar._selectionMode)
 
     @log
     def _add_search_item(self, source, param, item, remaining=0, data=None):
@@ -1162,6 +1164,12 @@ class Search(ViewContainer):
                 if row[6]:
                     items.append(row[5])
             callback(items)
+        elif self.get_visible_child() == self._playlistWidget:
+            items = []
+            for path in self._playlistWidget.view.get_selection():
+                _iter = self._playlistWidget.model.get_iter(path)
+                items.append(self._playlistWidget.model.get_value(_iter, 5))
+            callback(items)
         else:
             self.items_selected = []
             self.items_selected_callback = callback
@@ -1236,7 +1244,36 @@ class Search(ViewContainer):
                                     for child_path in [self.filter_model.convert_path_to_child_path(path)
                                                        for path in self.view.get_selection()]
                                     if self._model[child_path][11] == 'song'])
-        self.items_selected_callback(self.items_selected)
+        self._get_selected_playlists()
+
+    @log
+    def _get_selected_playlists(self):
+        self.playlists_index = 0
+        self.playlists_selected = [self._model[child_path][5]
+                                   for child_path in [self.filter_model.convert_path_to_child_path(path)
+                                                      for path in self.view.get_selection()]
+                                   if self._model[child_path][11] == 'playlist']
+        if len(self.playlists_selected):
+            self._get_selected_playlists_songs()
+        else:
+            self.items_selected_callback(self.items_selected)
+
+    @log
+    def _get_selected_playlists_songs(self):
+        grilo.populate_playlist_songs(
+            self.playlists_selected[self.playlists_index],
+            self._add_selected_playlists_songs)
+        self.playlists_index += 1
+
+    @log
+    def _add_selected_playlists_songs(self, source, param, item, remaining=0, data=None):
+        if item:
+            self.items_selected.append(item)
+        if remaining == 0:
+            if self.playlists_index < len(self.playlists_selected):
+                self._get_selected_playlists_songs()
+            else:
+                self.items_selected_callback(self.items_selected)
 
     @log
     def _filter_visible_func(self, model, _iter, data=None):
