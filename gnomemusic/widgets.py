@@ -969,6 +969,7 @@ class PlaylistDialog():
         self.view.connect('row-activated', self._on_item_activated)
 
         self.model = self.ui.get_object('liststore1')
+        self.addPlaylistIter = None
         self.populate()
 
         self.title_bar = self.ui.get_object('headerbar1')
@@ -1009,8 +1010,8 @@ class PlaylistDialog():
 
     @log
     def populate(self):
-        self.add_playlist_iter = self.model.append()
-        self.model.set(self.add_playlist_iter, [0, 1], [_("New Playlist"), True])
+        self.addPlaylistIter = self.model.append()
+        self.model.set(self.addPlaylistIter, [0, 1], [_("New Playlist"), True])
         if grilo.tracker:
             GLib.idle_add(grilo.populate_playlists, 0, self._add_item)
 
@@ -1021,7 +1022,7 @@ class PlaylistDialog():
 
     @log
     def _add_item_to_model(self, item):
-        new_iter = self.model.insert_before(self.add_playlist_iter)
+        new_iter = self.model.insert_before(self.addPlaylistIter)
         self.model.set(
             new_iter,
             [0, 1, 2],
