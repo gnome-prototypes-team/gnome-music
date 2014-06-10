@@ -1056,19 +1056,35 @@ class PlaylistDialog():
             self._select_button.set_sensitive(True)
 
     @log
+    def _select_iter(self, _iter):
+        self.view.set_cursor(self.model.get_path(_iter),
+                             self.view.get_columns()[0], False)
+        self.view.row_activated(self.model.get_path(_iter),
+                                self.view.get_columns()[0])
+
+    @log
     def _on_editing_started(self, renderer, editable, path, data=None):
         editable.set_text('')
         editable.connect('editing-done', self._on_editing_done, None)
 
     @log
     def _on_editing_done(self, editable, data=None):
-        if editable.get_text() != '':
-            playlists.create_playlist(editable.get_text())
+        playlistName = editable.get_text()
+        if playlistName == '':
+            return
+
+        _iter = None
+        for row in self.model:
+            if row[0] == playlistName:
+                _iter = row.iter
+                break
+
+        if _iter == None:
+            playlists.create_playlist(playlistName)
+        else:
+            self._select_iter(_iter)
 
     @log
     def _on_playlist_created(self, playlists, item):
         new_iter = self._add_item_to_model(item)
-        self.view.set_cursor(self.model.get_path(new_iter),
-                             self.view.get_columns()[0], False)
-        self.view.row_activated(self.model.get_path(new_iter),
-                                self.view.get_columns()[0])
+        self._select_iter(new_iter)
