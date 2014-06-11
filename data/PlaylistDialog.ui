@@ -32,18 +32,54 @@
             <property name="margin">12</property>
             <property name="shadow_type">in</property>
             <child>
-              <object class="GtkTreeView" id="treeview1">
+              <object class="GtkListBox" id="listbox">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
-                <property name="model">liststore1</property>
-                <property name="headers_visible">False</property>
-                <property name="activate_on_single_click">True</property>
                 <style>
-                  <class name="list-row"/>
                   <class name="playlists-list"/>
                 </style>
-                <child internal-child="selection">
-                  <object class="GtkTreeSelection" id="treeview-selection1"/>
+                <child>
+                  <object class="GtkListBoxRow" id="listboxrow-new">
+                    <property name="visible">True</property>
+                    <child>
+                      <object class="GtkBox">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="orientation">vertical</property>
+                        <child>
+                          <object class="GtkLabel" id="label-new">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="margin_start">20</property>
+                            <property name="margin_end">20</property>
+                            <property name="margin_top">6</property>
+                            <property name="margin_bottom">6</property>
+                            <property name="xalign">0</property>
+                            <property name="label" translatable="yes">New Playlist</property>
+                            <style>
+                              <class name="dim-label"/>
+                            </style>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkEntry" id="entry-new">
+                            <property name="visible">False</property>
+                            <property name="can_focus">True</property>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
                 </child>
               </object>
             </child>
@@ -76,6 +112,7 @@
       <object class="GtkButton" id="select-button">
         <property name="label" translatable="yes">Select</property>
         <property name="visible">True</property>
+        <property name="sensitive">False</property>
         <style>
           <class name="suggested-action"/>
           <class name="text-button"/>
@@ -85,15 +122,5 @@
           <property name="pack-type">end</property>
       </packing>
     </child>
-  </object>
-  <object class="GtkListStore" id="liststore1">
-    <columns>
-      <!-- column-name playlist-name -->
-      <column type="gchararray"/>
-      <!-- column-name editable -->
-      <column type="gboolean"/>
-      <!-- column-name item -->
-      <column type="GObject"/>
-    </columns>
   </object>
 </interface>

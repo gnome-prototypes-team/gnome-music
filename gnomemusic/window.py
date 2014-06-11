@@ -396,12 +396,12 @@ class Window(Gtk.ApplicationWindow):
                 return
 
             add_to_playlist = Widgets.PlaylistDialog(self)
-            if add_to_playlist.dialog_box.run() == Gtk.ResponseType.ACCEPT:
+            if add_to_playlist.dialogBox.run() == Gtk.ResponseType.ACCEPT:
                 playlists.add_to_playlist(
                     add_to_playlist.get_selected(),
                     selected_tracks)
             self.toolbar.set_selection_mode(False)
-            add_to_playlist.dialog_box.destroy()
+            add_to_playlist.dialogBox.destroy()
 
         self._stack.get_visible_child().get_selected_tracks(callback)
 

@@ -960,131 +960,104 @@ class PlaylistDialog():
     def __init__(self, parent):
         self.ui = Gtk.Builder()
         self.ui.add_from_resource('/org/gnome/Music/PlaylistDialog.ui')
-        self.dialog_box = self.ui.get_object('dialog1')
-        self.dialog_box.set_transient_for(parent)
+        self.dialogBox = self.ui.get_object('dialog1')
+        self.dialogBox.set_transient_for(parent)
 
-        self.view = self.ui.get_object('treeview1')
-        self.selection = self.ui.get_object('treeview-selection1')
-        self._add_list_renderers()
-        self.view.connect('row-activated', self._on_item_activated)
+        self.list = self.ui.get_object('listbox')
+        self.list.connect('row-activated', self._on_row_activated)
 
-        self.model = self.ui.get_object('liststore1')
-        self.addPlaylistIter = None
+        self.addNewRow = self.ui.get_object('listboxrow-new')
+        self.addNewRow.media = None
+        self.addNewRow.label = self.ui.get_object('label-new')
+        self.addNewRow.entry = self.ui.get_object('entry-new')
+        self.addNewRow.entry.connect('activate', self._on_entry_activated)
+
         self.populate()
 
-        self.title_bar = self.ui.get_object('headerbar1')
-        self.dialog_box.set_titlebar(self.title_bar)
+        headerBar = self.ui.get_object('headerbar1')
+        self.dialogBox.set_titlebar(headerBar)
 
-        self._cancel_button = self.ui.get_object('cancel-button')
-        self._select_button = self.ui.get_object('select-button')
-        self._select_button.set_sensitive(False)
-        self._cancel_button.connect('clicked', self._on_cancel_button_clicked)
-        self._select_button.connect('clicked', self._on_selection)
+        self.cancelButton = self.ui.get_object('cancel-button')
+        self.cancelButton.connect('clicked', self._on_cancel)
+        self.selectButton = self.ui.get_object('select-button')
+        self.selectButton.connect('clicked', self._on_select)
 
         playlists.connect('playlist-created', self._on_playlist_created)
 
     @log
     def get_selected(self):
-        _iter = self.selection.get_selected()[1]
-
-        if not _iter or self.model[_iter][1]:
-            return None
-
-        return self.model[_iter][2]
-
-    @log
-    def _add_list_renderers(self):
-        cols = Gtk.TreeViewColumn()
-        type_renderer = Gd.StyledTextRenderer(
-            xpad=8,
-            ypad=8,
-            ellipsize=Pango.EllipsizeMode.END,
-            xalign=0.0
-        )
-        type_renderer.connect('editing-started', self._on_editing_started, None)
-        cols.pack_start(type_renderer, True)
-        cols.add_attribute(type_renderer, "text", 0)
-        cols.add_attribute(type_renderer, "editable", 1)
-        cols.set_cell_data_func(type_renderer, self._on_list_text_render)
-        self.view.append_column(cols)
+        row = self.list.get_selected_row()
+        return row and row.media
 
     @log
     def populate(self):
-        self.addPlaylistIter = self.model.append()
-        self.model.set(self.addPlaylistIter, [0, 1], [_("New Playlist"), True])
         if grilo.tracker:
             GLib.idle_add(grilo.populate_playlists, 0, self._add_item)
 
     @log
     def _add_item(self, source, param, item, remaining=0, data=None):
-        if item:
-            self._add_item_to_model(item)
+        if not item:
+            return
+
+        newRow = self._add_row(item)
+        if self.addNewRow.get_index() == 1:
+            self.list.select_row(newRow)
 
     @log
-    def _add_item_to_model(self, item):
-        new_iter = self.model.insert_before(self.addPlaylistIter)
-        self.model.set(
-            new_iter,
-            [0, 1, 2],
-            [AlbumArtCache.get_media_title(item), False, item]
-        )
-        return new_iter
+    def _add_row(self, item):
+        row = Gtk.ListBoxRow()
+        row.media = item
+        row.show()
+        self.list.insert(row, self.addNewRow.get_index())
+
+        row.label = Gtk.Label(margin_start=20, margin_end=20,
+                              margin_top=6, margin_bottom=6,
+                              xalign=0,
+                              label=AlbumArtCache.get_media_title(item))
+        row.label.show()
+        row.add(row.label)
+
+        return row
 
     @log
-    def _on_list_text_render(self, col, cell, model, _iter, data):
-        editable = model.get_value(_iter, 1)
-        if editable:
-            cell.add_class("dim-label")
-        else:
-            cell.remove_class("dim-label")
+    def _on_select(self, select_button):
+        self.dialogBox.response(Gtk.ResponseType.ACCEPT)
 
     @log
-    def _on_selection(self, select_button):
-        self.dialog_box.response(Gtk.ResponseType.ACCEPT)
+    def _on_cancel(self, cancel_button):
+        self.dialogBox.response(Gtk.ResponseType.REJECT)
 
     @log
-    def _on_cancel_button_clicked(self, cancel_button):
-        self.dialog_box.response(Gtk.ResponseType.REJECT)
+    def _on_row_activated(self, listbox, row):
+        self.selectButton.set_sensitive(row.media is not None)
+        self.addNewRow.label.set_visible(row.media is not None)
+        self.addNewRow.entry.set_visible(row.media is None)
+        if row.media is None:
+            self.addNewRow.entry.grab_focus()
 
     @log
-    def _on_item_activated(self, view, path, column):
-        _iter = self.model.get_iter(path)
-        if self.model.get_value(_iter, 1):
-            self.view.set_cursor(path, column, True)
-            self._select_button.set_sensitive(False)
-        else:
-            self._select_button.set_sensitive(True)
-
-    @log
-    def _select_iter(self, _iter):
-        self.view.set_cursor(self.model.get_path(_iter),
-                             self.view.get_columns()[0], False)
-        self.view.row_activated(self.model.get_path(_iter),
-                                self.view.get_columns()[0])
-
-    @log
-    def _on_editing_started(self, renderer, editable, path, data=None):
-        editable.set_text('')
-        editable.connect('editing-done', self._on_editing_done, None)
-
-    @log
-    def _on_editing_done(self, editable, data=None):
-        playlistName = editable.get_text()
+    def _on_entry_activated(self, entry, data=None):
+        playlistName = entry.get_text()
         if playlistName == '':
             return
 
-        _iter = None
-        for row in self.model:
-            if row[0] == playlistName:
-                _iter = row.iter
+        existsRow = None
+        for row in self.list.get_children():
+            if row.media and \
+                    AlbumArtCache.get_media_title(row.media) == playlistName:
+                existsRow = row
                 break
 
-        if _iter == None:
-            playlists.create_playlist(playlistName)
+        if existsRow:
+            self.list.select_row(existsRow)
         else:
-            self._select_iter(_iter)
+            playlists.create_playlist(playlistName)
+
+        self.addNewRow.label.set_visible(True)
+        self.addNewRow.entry.set_visible(False)
+        self.addNewRow.entry.set_text('')
 
     @log
     def _on_playlist_created(self, playlists, item):
-        new_iter = self._add_item_to_model(item)
-        self._select_iter(new_iter)
+        newRow = self._add_row(item)
+        self.list.select_row(newRow)
