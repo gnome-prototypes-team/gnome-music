@@ -893,6 +893,8 @@ class Playlist(ViewContainer):
 
     @log
     def _on_playlist_created(self, playlists, item):
+        if not self._init:
+            return
         self._add_item_to_model(item)
         if self._model.iter_n_children(None) == 1:
             _iter = self._model.get_iter_first()
