@@ -720,7 +720,8 @@ class PlaylistWidget(Gtk.Box):
                 GObject.TYPE_BOOLEAN
             )
             self.view.set_model(self.model)
-            GLib.idle_add(grilo.populate_playlist_songs, playlist, self._add_item)
+            GLib.idle_add(grilo.populate_playlist_songs, playlist,
+                          self._add_item, -1, self.model)
             self.songsCount = 0
             self._update_songs_count()
 
@@ -823,7 +824,7 @@ class PlaylistWidget(Gtk.Box):
 
     @log
     def _add_item(self, source, param, item, remaining=0, data=None):
-        self._add_item_to_model(item, self.model)
+        self._add_item_to_model(item, data)
 
     @log
     def _add_item_to_model(self, item, model):

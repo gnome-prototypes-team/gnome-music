@@ -197,8 +197,8 @@ class Grilo(GObject.GObject):
             callback(source, None, None, 0, None)
 
     @log
-    def populate_playlist_songs(self, playlist, callback, count=-1):
-        self.populate_items(Query.playlist_songs(playlist.get_id()), 0, callback, count)
+    def populate_playlist_songs(self, playlist, callback, count=-1, data=None):
+        self.populate_items(Query.playlist_songs(playlist.get_id()), 0, callback, count, data)
 
     @log
     def populate_custom_query(self, query, callback, count=-1, data=None):
