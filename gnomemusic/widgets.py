@@ -840,8 +840,9 @@ class PlaylistWidget(Gtk.Box):
             [2, 3, 5, 8, 9, 10],
             [title, artist, item, self.nowPlayingIconName, False, False])
         self.player.discover_item(item, self._on_discovered, _iter)
-        self.songsCount += 1
-        self._update_songs_count()
+        if model == self.model:
+            self.songsCount += 1
+            self._update_songs_count()
 
     @log
     def _on_discovered(self, info, error, _iter):
