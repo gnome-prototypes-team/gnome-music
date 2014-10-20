@@ -148,3 +148,8 @@ GtkTreeView{
 }
 
 .content-view { background-color: @theme_bg; }
+
+.player-toolbar GtkFrame {
+    padding-top: 0;
+    padding-bottom: 0;
+}
