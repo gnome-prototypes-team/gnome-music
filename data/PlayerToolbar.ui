@@ -51,6 +51,31 @@
     <property name="icon_name">media-skip-backward-symbolic</property>
     <property name="icon_size">1</property>
   </object>
+  <object class="GtkPopover" id="popover">
+    <property name="can_focus">True</property>
+    <child>
+      <object class="GtkGrid" id="popover_grid">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="halign">center</property>
+        <property name="valign">center</property>
+        <property name="column_spacing">8</property>
+        <child>
+          <object class="GtkHeaderBar" id="popover_headerbar">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="title">14 Tracks Queued</property>
+          </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">0</property>
+            <property name="width">1</property>
+            <property name="height">1</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
   <object class="GtkActionBar" id="actionbar">
     <property name="can_focus">False</property>
     <property name="no_show_all">True</property>
@@ -58,6 +83,7 @@
       <object class="GtkBox" id="buttons">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
+        <property name="valign">center</property>
         <child>
           <object class="GtkButton" id="previous_button">
             <property name="width_request">42</property>
@@ -115,31 +141,32 @@
       </object>
     </child>
     <child>
-      <object class="GtkBox" id="nowplaying">
+      <object class="GtkMenuButton" id="nowplaying">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="halign">center</property>
         <property name="valign">center</property>
-        <property name="spacing">8</property>
+        <property name="relief">none</property>
+        <property name="popover">popover</property>
         <child>
-          <object class="GtkImage" id="cover">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">0</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkBox" id="nowplaying_labels">
+          <object class="GtkGrid" id="nowplaying_grid">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="halign">center</property>
             <property name="valign">center</property>
-            <property name="orientation">vertical</property>
-            <property name="homogeneous">True</property>
+            <property name="column_spacing">8</property>
+            <child>
+              <object class="GtkImage" id="cover">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">0</property>
+                <property name="width">1</property>
+                <property name="height">2</property>
+              </packing>
+            </child>
             <child>
               <object class="GtkLabel" id="artist">
                 <property name="visible">True</property>
@@ -156,9 +183,10 @@
                 </attributes>
               </object>
               <packing>
-                <property name="expand">False</property>
-                <property name="fill">False</property>
-                <property name="position">0</property>
+                <property name="left_attach">1</property>
+                <property name="top_attach">0</property>
+                <property name="width">1</property>
+                <property name="height">1</property>
               </packing>
             </child>
             <child>
@@ -176,17 +204,13 @@
                 </attributes>
               </object>
               <packing>
-                <property name="expand">False</property>
-                <property name="fill">False</property>
-                <property name="position">1</property>
+                <property name="left_attach">1</property>
+                <property name="top_attach">1</property>
+                <property name="width">1</property>
+                <property name="height">1</property>
               </packing>
             </child>
           </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">False</property>
-            <property name="position">1</property>
-          </packing>
         </child>
       </object>
     </child>
